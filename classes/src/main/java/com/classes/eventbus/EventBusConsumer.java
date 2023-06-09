@@ -8,11 +8,11 @@ import io.vertx.reactivex.core.eventbus.Message;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class EventBusConsumerRegistrar {
-
-  private final ClassService classService;
+public class EventBusConsumer {
 
   private final EventBus eventBus;
+
+  private final ClassService classService;
 
   public Completable registerConsumers() {
     return Completable.create(emitter -> {

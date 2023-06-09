@@ -1,6 +1,6 @@
 package com.classes;
 
-import com.classes.eventbus.EventBusConsumerRegistrar;
+import com.classes.eventbus.EventBusConsumer;
 import com.classes.handler.ClassHandler;
 import com.classes.handler.impl.ClassHandlerImpl;
 import com.classes.repository.ClassRepository;
@@ -53,7 +53,7 @@ public class ClassVerticle extends AbstractVerticle {
     final ClassService classService = new ClassServiceImpl(classRepository);
     final ClassHandler classHandler = new ClassHandlerImpl(classService);
     final ClassRouter classRouter = new ClassRouter(vertx, classHandler);
-    final EventBusConsumerRegistrar consumerRegistrar = new EventBusConsumerRegistrar(classService, vertx.eventBus());
+    final EventBusConsumer consumerRegistrar = new EventBusConsumer(vertx.eventBus(), classService);
 
     return vertx
       .createHttpServer()
