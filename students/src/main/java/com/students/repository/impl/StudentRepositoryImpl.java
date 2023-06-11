@@ -4,7 +4,7 @@ import com.students.entity.Student;
 import com.students.repository.StudentRepository;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.MongoClient;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;

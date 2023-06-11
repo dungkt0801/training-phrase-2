@@ -2,9 +2,9 @@ package com.classes.eventbus;
 
 import com.classes.service.ClassService;
 import io.reactivex.Completable;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.eventbus.EventBus;
-import io.vertx.reactivex.core.eventbus.Message;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

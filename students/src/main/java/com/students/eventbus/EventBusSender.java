@@ -1,8 +1,8 @@
 package com.students.eventbus;
 
 import io.reactivex.Single;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.eventbus.EventBus;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

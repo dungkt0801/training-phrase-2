@@ -2,9 +2,9 @@ package com.students.handler.impl;
 
 import com.students.service.StudentService;
 import com.students.util.Util;
+import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.MultiMap;
-import io.vertx.reactivex.ext.web.RoutingContext;
+import io.vertx.ext.web.RoutingContext;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import com.students.handler.StudentHandler;

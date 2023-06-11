@@ -8,19 +8,17 @@ import com.classes.repository.impl.ClassRepositoryImpl;
 import com.classes.router.ClassRouter;
 import com.classes.service.ClassService;
 import com.classes.service.impl.ClassServiceImpl;
-import io.reactivex.Single;
+import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.reactivex.core.AbstractVerticle;
-import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.http.HttpServer;
-import io.vertx.reactivex.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.MongoClient;
 import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
-import io.vertx.reactivex.config.ConfigRetriever;
 
 public class ClassVerticle extends AbstractVerticle {
 
@@ -29,24 +27,28 @@ public class ClassVerticle extends AbstractVerticle {
     ClusterManager mgr = new HazelcastClusterManager();
     VertxOptions clusterOptions = new VertxOptions().setClusterManager(mgr);
 
-    Single<Vertx> vertxSingle = Vertx.rxClusteredVertx(clusterOptions);
-
-    vertxSingle
-      .flatMap(vertx -> {
-        this.vertx = vertx;
+    io.vertx.core.Vertx.clusteredVertx(clusterOptions, res -> {
+      if (res.succeeded()) {
+        this.vertx = res.result();
         ConfigStoreOptions store = new ConfigStoreOptions().setType("env");
         ConfigRetrieverOptions options = new ConfigRetrieverOptions().addStore(store);
-        ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
-        return retriever.rxGetConfig();
-      })
-      .flatMap(this::createServicesAndStartServer)
-      .subscribe(
-        result -> startFuture.complete(),
-        error -> startFuture.fail(error)
-      );
+        io.vertx.config.ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
+        retriever.getConfig(ar -> {
+          if (ar.succeeded()) {
+            JsonObject configurations = ar.result();
+            createServicesAndStartServer(configurations);
+            startFuture.complete();
+          } else {
+            startFuture.fail(ar.cause());
+          }
+        });
+      } else {
+        startFuture.fail(res.cause());
+      }
+    });
   }
 
-  private Single<HttpServer> createServicesAndStartServer(JsonObject configurations) {
+  private void createServicesAndStartServer(JsonObject configurations) {
     MongoClient mongoClient = createMongoClient(vertx, configurations);
 
     final ClassRepository classRepository = new ClassRepositoryImpl(mongoClient);
@@ -55,12 +57,10 @@ public class ClassVerticle extends AbstractVerticle {
     final ClassRouter classRouter = new ClassRouter(vertx, classHandler);
     final EventBusConsumer consumerRegistrar = new EventBusConsumer(vertx.eventBus(), classService);
 
-    return vertx
-      .createHttpServer()
+    vertx.createHttpServer()
       .requestHandler(classRouter.getRouter())
-      .rxListen(configurations.getInteger("HTTP_PORT", 8081))
-      .doOnSuccess(server -> {
-        System.out.println("HTTP Server listening on port " + server.actualPort());
+      .listen(configurations.getInteger("HTTP_PORT", 8081), server -> {
+        System.out.println("HTTP Server listening on port " + server.result().actualPort());
         consumerRegistrar.registerConsumers()
           .subscribe(
             () -> System.out.println("Successfully registered consumers"),

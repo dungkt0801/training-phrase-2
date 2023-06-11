@@ -5,7 +5,7 @@ import com.classes.repository.ClassRepository;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.MongoClient;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -34,13 +34,21 @@ public class ClassRepositoryImpl implements ClassRepository {
 
   @Override
   public Maybe<Class> findById(String id) {
-    JsonObject query = new JsonObject().put("_id", new JsonObject().put("$oid", id));
-
-    return mongoClient.rxFindOne(COLLECTION_NAME, query, null)
-      .flatMap(result -> {
-        final Class clazz = new Class(result);
-        return Maybe.just(clazz);
+    return Maybe.create(emitter -> {
+      JsonObject query = new JsonObject().put("_id", new JsonObject().put("$oid", id));
+      mongoClient.findOne(COLLECTION_NAME, query, null, result -> {
+        if (result.succeeded()) {
+          if (result.result() != null) {
+            Class clazz = new Class(result.result());
+            emitter.onSuccess(clazz);
+          } else {
+            emitter.onComplete();
+          }
+        } else {
+          emitter.onError(result.cause());
+        }
       });
+    });
   }
 
   @Override
