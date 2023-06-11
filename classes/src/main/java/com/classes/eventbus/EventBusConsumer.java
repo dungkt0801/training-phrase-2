@@ -26,15 +26,13 @@ public class EventBusConsumer {
     });
   }
 
-  private void handleClassInfoRequest(Message<Object> message) {
-    JsonObject request = (JsonObject) message.body();
+  private void handleClassInfoRequest(Message<JsonObject> message) {
+    JsonObject request = message.body();
     String classId = request.getString("classId");
 
-    System.out.println("handleClassInfoRequest: " + classId);
     classService.findById(classId)
       .subscribe(
         classInfo -> {
-          System.out.println("handleClassInfoRequest classInfo: " + classInfo);
           JsonObject response = new JsonObject()
             .put("classId", classInfo.getId())
             .put("className", classInfo.getClassName())

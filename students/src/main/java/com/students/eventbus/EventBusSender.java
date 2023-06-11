@@ -14,9 +14,9 @@ public class EventBusSender {
     return Single.create(emitter -> {
       JsonObject request = new JsonObject().put("classId", classId);
 
-      eventBus.send("request.classinfo", request, reply -> {
+      eventBus.<JsonObject>send("request.classinfo", request, reply -> {
         if (reply.succeeded()) {
-          JsonObject classInfo = (JsonObject) reply.result().body();
+          JsonObject classInfo = reply.result().body();
           emitter.onSuccess(classInfo);
         } else {
           emitter.onError(reply.cause());

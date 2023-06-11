@@ -21,7 +21,6 @@ public class ClassServiceImpl implements ClassService {
 
   @Override
   public Maybe<Class> findById(String id) {
-    System.out.println("class service: " + id);
     return classRepository.findById(id);
   }
 

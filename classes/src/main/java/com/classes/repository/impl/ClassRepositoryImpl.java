@@ -19,19 +19,17 @@ public class ClassRepositoryImpl implements ClassRepository {
 
   @Override
   public Single<List<Class>> findAll(JsonObject query) {
-    return Single.create(emitter -> {
-      mongoClient.find(COLLECTION_NAME, query, res -> {
-        if (res.succeeded()) {
-          List<Class> classes = res.result().stream()
-            .map(Class::new)
-            .collect(Collectors.toList());
+    return Single.create(emitter -> mongoClient.find(COLLECTION_NAME, query, res -> {
+      if (res.succeeded()) {
+        List<Class> classes = res.result().stream()
+          .map(Class::new)
+          .collect(Collectors.toList());
 
-          emitter.onSuccess(classes);
-        } else {
-          emitter.onError(res.cause());
-        }
-      });
-    });
+        emitter.onSuccess(classes);
+      } else {
+        emitter.onError(res.cause());
+      }
+    }));
   }
 
   @Override
@@ -40,7 +38,6 @@ public class ClassRepositoryImpl implements ClassRepository {
 
     return mongoClient.rxFindOne(COLLECTION_NAME, query, null)
       .flatMap(result -> {
-        System.out.println(result);
         final Class clazz = new Class(result);
         return Maybe.just(clazz);
       });
