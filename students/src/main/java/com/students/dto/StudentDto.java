@@ -20,7 +20,7 @@ public class StudentDto {
 
   private String name;
 
-  private String birthDay;
+  private String birthday;
 
   private ClassDto classInfo;
 

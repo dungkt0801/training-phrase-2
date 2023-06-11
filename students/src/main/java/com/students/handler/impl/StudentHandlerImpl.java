@@ -48,10 +48,10 @@ public class StudentHandlerImpl implements StudentHandler {
       query.put("className", className.trim());
     }
 
-    // birthDay
-    String birthDay = queryParams.get("birthDay");
-    if(birthDay != null && !birthDay.isEmpty()) {
-      query.put("birthDay", birthDay.trim());
+    // birthday
+    String birthday = queryParams.get("birthday");
+    if(birthday != null && !birthday.isEmpty()) {
+      query.put("birthday", birthday.trim());
     }
 
     return query;

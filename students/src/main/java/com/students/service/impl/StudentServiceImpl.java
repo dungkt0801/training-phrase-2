@@ -37,7 +37,7 @@ public class StudentServiceImpl implements StudentService {
     return StudentDto.builder()
       .id(student.getId())
       .name(student.getName())
-      .birthDay(student.getBirthDay())
+      .birthday(student.getBirthday())
       .classInfo(
         ClassDto.builder()
           .id(clazzJson.getString("id"))

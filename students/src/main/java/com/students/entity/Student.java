@@ -1,6 +1,7 @@
 package com.students.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.students.util.Util;
 import io.vertx.core.json.JsonObject;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,25 +19,34 @@ public class Student {
 
   private String name;
 
-  private String birthDay;
+  private String birthday;
 
   private String classId;
 
   public Student(JsonObject jsonObject) {
 
-    JsonObject idString = jsonObject.getJsonObject("_id");
-    this.id = idString.getString("$oid");
+    // id
+    if (
+      jsonObject.containsKey("_id") &&
+        jsonObject.getValue("_id") instanceof JsonObject &&
+        Util.isValidObjectId(jsonObject.getJsonObject("_id").getString("$oid"))
+    ) {
+      this.id = jsonObject.getJsonObject("_id").getString("$oid");
+    }
 
+    // student name
     String name = jsonObject.getString("name");
     if(name != null && !name.isEmpty()) {
       this.name = jsonObject.getString("name");
     }
 
-    String birthDay = jsonObject.getString("birthDay");
-    if(birthDay != null && !birthDay.isEmpty()) {
-      this.birthDay = jsonObject.getString("birthDay");
+    // birthday
+    String birthday = jsonObject.getString("birthday");
+    if(birthday != null && !birthday.isEmpty()) {
+      this.birthday = jsonObject.getString("birthday");
     }
 
+    // classId
     JsonObject classId = jsonObject.getJsonObject("classId");
     if(classId != null) {
       this.classId = classId.getString("$oid");
