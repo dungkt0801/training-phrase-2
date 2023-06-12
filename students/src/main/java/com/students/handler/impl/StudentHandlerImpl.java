@@ -5,6 +5,7 @@ import com.students.util.Util;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import com.students.handler.StudentHandler;
@@ -21,6 +22,21 @@ public class StudentHandlerImpl implements StudentHandler {
         result -> Util.onSuccessResponse(rc, 200, result),
         error -> Util.onErrorResponse(rc, 500, error)
       );
+  }
+
+  @Override
+  public void findById(RoutingContext rc) {
+    final String id = rc.pathParam("id");
+    if(Util.isValidObjectId(id)) {
+      studentService.findById(id)
+        .subscribe(
+          result -> Util.onSuccessResponse(rc, 200, result),
+          error -> Util.onErrorResponse(rc, 500, error.getCause()),
+          () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No student was found with the id " + id))
+        );
+    } else {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
+    }
   }
 
   private JsonObject getQueryParams(RoutingContext rc) {

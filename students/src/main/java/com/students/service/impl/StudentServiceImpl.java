@@ -3,6 +3,7 @@ package com.students.service.impl;
 import com.students.dto.ClassDto;
 import com.students.eventbus.EventBusSender;
 import com.students.repository.StudentRepository;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
@@ -31,6 +32,15 @@ public class StudentServiceImpl implements StudentService {
         eventBusSender.sendClassInfoRequest(student.getClassId())
           .map(clazz -> buildStudentResponseDto(student, clazz)))
       .toList();
+  }
+
+  @Override
+  public Maybe<StudentDto> findById(String id) {
+    return studentRepository.findById(id)
+      .flatMap(student -> eventBusSender.sendClassInfoRequest(student.getClassId())
+        .toMaybe()
+        .map(clazz -> buildStudentResponseDto(student, clazz))
+      );
   }
 
   private StudentDto buildStudentResponseDto(Student student, JsonObject clazzJson) {

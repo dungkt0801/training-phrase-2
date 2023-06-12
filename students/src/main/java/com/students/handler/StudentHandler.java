@@ -6,4 +6,6 @@ public interface StudentHandler {
 
   void findAll(RoutingContext rc);
 
+  void findById(RoutingContext rc);
+
 }
