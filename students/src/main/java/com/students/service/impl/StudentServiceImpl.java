@@ -6,6 +6,7 @@ import com.students.repository.StudentRepository;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,33 @@ public class StudentServiceImpl implements StudentService {
         .toMaybe()
         .map(clazz -> buildStudentResponseDto(student, clazz))
       );
+  }
+
+  @Override
+  public Single<StudentDto> insertOne(Student student) {
+    return eventBusSender.sendClassInfoRequest(student.getClassId())
+      .flatMap(clazz -> checkClassAvailableAndInsertStudent(clazz, student)
+        .map(insertedStudent -> buildStudentResponseDto(student, clazz)))
+      .onErrorResumeNext(Single::error);
+  }
+
+  private Single<Student> checkClassAvailableAndInsertStudent(JsonObject clazz, Student student) {
+    Long enrolledStudents = clazz.getLong("enrolledStudents");
+    Long totalStudents = clazz.getLong("totalStudents");
+    if(enrolledStudents < totalStudents) {
+      return insertStudentAndUpdateClass(clazz, student);
+    } else {
+      return Single.error(new IllegalArgumentException("The class is at maximum enrollment capacity"));
+    }
+  }
+
+  private Single<Student> insertStudentAndUpdateClass(JsonObject clazz, Student student){
+    return studentRepository.insertOne(student)
+      .flatMap(insertedStudent -> {
+        clazz.put("enrolledStudents", clazz.getLong("enrolledStudents") + 1);
+        return eventBusSender.sendUpdateClassRequest(clazz.getString("classId"), clazz)
+          .map(response -> insertedStudent);
+      });
   }
 
   private StudentDto buildStudentResponseDto(Student student, JsonObject clazzJson) {

@@ -8,4 +8,6 @@ public interface StudentHandler {
 
   void findById(RoutingContext rc);
 
+  void insertOne(RoutingContext rc);
+
 }

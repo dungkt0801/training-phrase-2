@@ -1,6 +1,7 @@
 package com.students;
 
 import com.students.eventbus.EventBusSender;
+import com.students.eventbus.impl.EventBusSenderImpl;
 import com.students.handler.StudentHandler;
 import com.students.handler.impl.StudentHandlerImpl;
 import com.students.repository.StudentRepository;
@@ -52,7 +53,7 @@ public class StudentVerticle extends AbstractVerticle {
     MongoClient mongoClient = createMongoClient(vertx, configurations);
 
     StudentRepository studentRepository = new StudentRepositoryImpl(mongoClient);
-    EventBusSender eventBusSender = new EventBusSender(vertx.eventBus());
+    EventBusSender eventBusSender = new EventBusSenderImpl(vertx.eventBus());
     StudentService studentService = new StudentServiceImpl(eventBusSender, studentRepository);
     StudentHandler studentHandler = new StudentHandlerImpl(studentService);
     StudentRouter studentRouter = new StudentRouter(vertx, studentHandler);

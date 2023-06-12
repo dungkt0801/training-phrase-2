@@ -1,5 +1,6 @@
 package com.students.util;
 
+import com.students.dto.ClassDto;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -30,6 +31,14 @@ public class Util {
     } catch (IllegalArgumentException e) {
       return false;
     }
+  }
+
+  public static JsonObject classDtoToJsonObject(ClassDto classDto) {
+    return new JsonObject()
+      .put("id", classDto.getId())
+      .put("className", classDto.getClassName())
+      .put("totalStudents", classDto.getTotalStudents())
+      .put("enrolledStudents", classDto.getEnrolledStudents());
   }
 
 }

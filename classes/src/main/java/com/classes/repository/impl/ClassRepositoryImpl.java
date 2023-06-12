@@ -64,6 +64,8 @@ public class ClassRepositoryImpl implements ClassRepository {
     final JsonObject query = new JsonObject().put("_id", new JsonObject().put("$oid", id));
     JsonObject update = new JsonObject()
       .put("$set", ClassUtil.jsonObjectFromClass(clazz));
+    System.out.println(query);
+    System.out.println(update);
 
     return Maybe.create(emitter -> mongoClient.findOneAndUpdateWithOptions(
       COLLECTION_NAME,
@@ -73,7 +75,7 @@ public class ClassRepositoryImpl implements ClassRepository {
       res -> {
         if (res.succeeded()) {
           if (res.result() != null) {
-            System.out.println(res.result());
+            System.out.println("updateOne: " + res.result());
             emitter.onSuccess(new Class(res.result()));
           } else {
             emitter.onComplete();
