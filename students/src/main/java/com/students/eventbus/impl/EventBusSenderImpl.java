@@ -4,6 +4,7 @@ import com.students.eventbus.EventBusSender;
 import io.reactivex.Single;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -17,8 +18,12 @@ public class EventBusSenderImpl implements EventBusSender {
 
       eventBus.<JsonObject>send("request.classInfo", request, reply -> {
         if (reply.succeeded()) {
-          System.out.println(reply.result().body());
-          emitter.onSuccess(reply.result().body());
+          JsonObject responseBody = reply.result().body();
+          if(responseBody.getString("error") == null) {
+            emitter.onSuccess(reply.result().body());
+          } else {
+            emitter.onError(new NoSuchElementException("No class was found with the id " + classId));
+          }
         } else {
           emitter.onError(reply.cause());
         }
@@ -28,14 +33,17 @@ public class EventBusSenderImpl implements EventBusSender {
 
   public Single<JsonObject> sendUpdateClassRequest(String id, JsonObject clazzJson) {
     return Single.create(emitter -> {
-      System.out.println("sendUpdateClassRequest: " + id);
       JsonObject request = new JsonObject()
         .put("classId", id)
         .put("classRequest", clazzJson);
       eventBus.<JsonObject>send("request.updateClass", request, reply -> {
-        System.out.println(reply.result());
         if (reply.succeeded()) {
-          emitter.onSuccess(reply.result().body());
+          JsonObject responseBody = reply.result().body();
+          if(responseBody.getString("error") == null) {
+            emitter.onSuccess(reply.result().body());
+          } else {
+            emitter.onError(new NoSuchElementException("No class was found with the id " + id));
+          }
         } else {
           emitter.onError(reply.cause());
         }

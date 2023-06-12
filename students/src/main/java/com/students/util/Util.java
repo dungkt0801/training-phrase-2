@@ -33,12 +33,4 @@ public class Util {
     }
   }
 
-  public static JsonObject classDtoToJsonObject(ClassDto classDto) {
-    return new JsonObject()
-      .put("id", classDto.getId())
-      .put("className", classDto.getClassName())
-      .put("totalStudents", classDto.getTotalStudents())
-      .put("enrolledStudents", classDto.getEnrolledStudents());
-  }
-
 }

@@ -9,9 +9,9 @@ import java.util.List;
 
 public interface ClassService {
 
-  Single<List<Class>> findAll(JsonObject query);
+  Single<List<ClassDto>> findAll(JsonObject query);
 
-  Maybe<Class> findById(String id);
+  Maybe<ClassDto> findById(String id);
 
   Single<Class> insertOne(Class clazz);
 

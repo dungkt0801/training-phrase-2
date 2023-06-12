@@ -26,6 +26,8 @@ public class Class {
 
   private Long enrolledStudents;
 
+  private Long version;
+
   public Class(JsonObject jsonObject) {
 
     // id
@@ -57,6 +59,14 @@ public class Class {
       this.enrolledStudents = enrolledStudents;
     } else {
       this.enrolledStudents = 0L;
+    }
+
+    // version
+    Long version = jsonObject.getLong("version");
+    if(version != null && version >=0) {
+      this.version = version;
+    } else {
+      this.version = 0L;
     }
 
   }

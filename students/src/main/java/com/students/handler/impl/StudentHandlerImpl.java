@@ -36,7 +36,7 @@ public class StudentHandlerImpl implements StudentHandler {
       studentService.findById(id)
         .subscribe(
           result -> Util.onSuccessResponse(rc, 200, result),
-          error -> Util.onErrorResponse(rc, 500, error.getCause()),
+          error -> Util.onErrorResponse(rc, 500, error),
           () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No student was found with the id " + id))
         );
     } else {
@@ -59,8 +59,21 @@ public class StudentHandlerImpl implements StudentHandler {
     studentService.insertOne(student)
       .subscribe(
         result -> Util.onSuccessResponse(rc, 200, result),
-        error -> Util.onErrorResponse(rc, 500, error.getCause())
+        error -> handleInsertErrorResponse(rc, error)
       );
+  }
+
+  private void handleInsertErrorResponse(RoutingContext rc, Throwable error) {
+    {
+      if(error instanceof IllegalArgumentException) {
+        Util.onErrorResponse(rc, 400, error);
+      }
+      else if (error instanceof NoSuchElementException) {
+        Util.onErrorResponse(rc, 404, error);
+      } else {
+        Util.onErrorResponse(rc, 500, error);
+      }
+    }
   }
 
   private JsonObject getQueryParams(RoutingContext rc) {

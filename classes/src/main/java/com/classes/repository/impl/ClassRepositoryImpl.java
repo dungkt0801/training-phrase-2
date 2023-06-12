@@ -6,9 +6,7 @@ import com.classes.util.ClassUtil;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
-import io.vertx.ext.mongo.UpdateOptions;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -61,29 +59,42 @@ public class ClassRepositoryImpl implements ClassRepository {
 
   @Override
   public Maybe<Class> updateOne(String id, Class clazz) {
-    final JsonObject query = new JsonObject().put("_id", new JsonObject().put("$oid", id));
-    JsonObject update = new JsonObject()
-      .put("$set", ClassUtil.jsonObjectFromClass(clazz));
-    System.out.println(query);
-    System.out.println(update);
+    return findById(id)
+      .flatMap(existingClass -> {
+        existingClass.setClassName(clazz.getClassName());
+        existingClass.setTotalStudents(clazz.getTotalStudents());
+        existingClass.setEnrolledStudents(clazz.getEnrolledStudents());
 
-    return Maybe.create(emitter -> mongoClient.findOneAndUpdateWithOptions(
+        return updateClass(existingClass, existingClass.getVersion());
+      });
+  }
+
+  private Maybe<Class> updateClass(Class clazz, Long version) {
+
+    final JsonObject query = new JsonObject()
+      .put("_id", new JsonObject().put("$oid", clazz.getId()))
+      .put("version", version);
+
+    JsonObject update = new JsonObject()
+      .put("$set", ClassUtil.jsonObjectFromClass(clazz))
+      .put("$inc", new JsonObject().put("totalStudents", -1))
+      .put("$inc", new JsonObject().put("version", 1));
+
+    return Maybe.create(emitter -> mongoClient.updateCollection(
       COLLECTION_NAME,
       query, update,
-      new FindOptions(),
-      new UpdateOptions().setReturningNewDocument(true),
       res -> {
         if (res.succeeded()) {
-          if (res.result() != null) {
-            System.out.println("updateOne: " + res.result());
-            emitter.onSuccess(new Class(res.result()));
+          if (res.result().getDocMatched() > 0) {
+            emitter.onSuccess(new Class(res.result().toJson()));
           } else {
             emitter.onComplete();
           }
         } else {
           emitter.onError(res.cause());
         }
-      }));
+      }
+    ));
   }
 
   @Override

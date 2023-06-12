@@ -6,7 +6,6 @@ import com.students.repository.StudentRepository;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
-import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +30,7 @@ public class StudentServiceImpl implements StudentService {
       .flatMapObservable(Observable::fromIterable)
       .flatMapSingle(student ->
         eventBusSender.sendClassInfoRequest(student.getClassId())
+          .onErrorResumeNext(Single.just(new JsonObject()))
           .map(clazz -> buildStudentResponseDto(student, clazz)))
       .toList();
   }
@@ -40,6 +40,7 @@ public class StudentServiceImpl implements StudentService {
     return studentRepository.findById(id)
       .flatMap(student -> eventBusSender.sendClassInfoRequest(student.getClassId())
         .toMaybe()
+        .onErrorResumeNext(Maybe.just(new JsonObject()))
         .map(clazz -> buildStudentResponseDto(student, clazz))
       );
   }
@@ -66,7 +67,7 @@ public class StudentServiceImpl implements StudentService {
     return studentRepository.insertOne(student)
       .flatMap(insertedStudent -> {
         clazz.put("enrolledStudents", clazz.getLong("enrolledStudents") + 1);
-        return eventBusSender.sendUpdateClassRequest(clazz.getString("classId"), clazz)
+        return eventBusSender.sendUpdateClassRequest(clazz.getString("id"), clazz)
           .map(response -> insertedStudent);
       });
   }
