@@ -2,10 +2,13 @@ package com.classes.repository.impl;
 
 import com.classes.entity.Class;
 import com.classes.repository.ClassRepository;
+import com.classes.util.ClassUtil;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.UpdateOptions;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -57,8 +60,28 @@ public class ClassRepositoryImpl implements ClassRepository {
   }
 
   @Override
-  public Single<String> updateOne(String id, Class clazz) {
-    return null;
+  public Maybe<Class> updateOne(String id, Class clazz) {
+    final JsonObject query = new JsonObject().put("_id", new JsonObject().put("$oid", id));
+    JsonObject update = new JsonObject()
+      .put("$set", ClassUtil.jsonObjectFromClass(clazz));
+
+    return Maybe.create(emitter -> mongoClient.findOneAndUpdateWithOptions(
+      COLLECTION_NAME,
+      query, update,
+      new FindOptions(),
+      new UpdateOptions().setReturningNewDocument(true),
+      res -> {
+        if (res.succeeded()) {
+          if (res.result() != null) {
+            System.out.println(res.result());
+            emitter.onSuccess(new Class(res.result()));
+          } else {
+            emitter.onComplete();
+          }
+        } else {
+          emitter.onError(res.cause());
+        }
+      }));
   }
 
   @Override

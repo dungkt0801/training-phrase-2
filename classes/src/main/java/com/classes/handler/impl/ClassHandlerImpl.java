@@ -1,7 +1,9 @@
 package com.classes.handler.impl;
 
+import com.classes.entity.Class;
 import com.classes.handler.ClassHandler;
 import com.classes.service.ClassService;
+import com.classes.util.ClassUtil;
 import com.classes.util.Util;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
@@ -31,7 +33,7 @@ public class ClassHandlerImpl implements ClassHandler {
         .subscribe(
           result -> Util.onSuccessResponse(rc, 200, result),
           error -> Util.onErrorResponse(rc, 500, error),
-          () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No class found with the id " + id)) // Called on onComplete
+          () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No class found with the id " + id))
         );
     } else {
       Util.onErrorResponse(rc, 400, new NoSuchElementException("Invalid class id"));
@@ -45,7 +47,18 @@ public class ClassHandlerImpl implements ClassHandler {
 
   @Override
   public void updateOne(RoutingContext rc) {
-
+    if(rc.getBodyAsJson() != null) {
+      final String id = rc.pathParam("id");
+      final Class clazz = ClassUtil.classFromJsonObject(rc.getBodyAsJson());
+      classService.updateOne(id, clazz)
+        .subscribe(
+          result -> Util.onSuccessResponse(rc, 200, result),
+          error -> Util.onErrorResponse(rc, 500, error),
+          () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No class found with the id " + id))
+        );
+    } else {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Request body is empty"));
+    }
   }
 
   @Override

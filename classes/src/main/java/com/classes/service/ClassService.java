@@ -1,5 +1,6 @@
 package com.classes.service;
 
+import com.classes.dto.ClassDto;
 import com.classes.entity.Class;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
@@ -14,7 +15,7 @@ public interface ClassService {
 
   Single<Class> insertOne(Class clazz);
 
-  Single<String> updateOne(String id, Class clazz);
+  Maybe<ClassDto> updateOne(String id, Class clazz);
 
   Single<List<String>> findClassIdsByName(String name);
 

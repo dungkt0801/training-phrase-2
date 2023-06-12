@@ -20,7 +20,7 @@ public class ClassRouter {
     classRouter.get("/api/v1/classes").handler(classHandler::findAll);
     classRouter.get("/api/v1/classes/:id").handler(classHandler::findById);
 //    classRouter.post("/api/v1/classes").handler(classHandler::insertOne);
-//    classRouter.put("/api/v1/classes/:id").handler(classHandler::updateOne);
+    classRouter.put("/api/v1/classes/:id").handler(classHandler::updateOne);
 
     return classRouter;
   }

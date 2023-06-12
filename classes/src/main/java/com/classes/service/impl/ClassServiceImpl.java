@@ -1,8 +1,10 @@
 package com.classes.service.impl;
 
+import com.classes.dto.ClassDto;
 import com.classes.entity.Class;
 import com.classes.repository.ClassRepository;
 import com.classes.service.ClassService;
+import com.classes.util.ClassUtil;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
@@ -30,8 +32,9 @@ public class ClassServiceImpl implements ClassService {
   }
 
   @Override
-  public Single<String> updateOne(String id, Class clazz) {
-    return null;
+  public Maybe<ClassDto> updateOne(String id, Class clazz) {
+    return classRepository.updateOne(id, clazz)
+      .map(ClassUtil::classToClassDto);
   }
 
   @Override
