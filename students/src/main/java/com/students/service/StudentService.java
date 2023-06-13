@@ -15,4 +15,8 @@ public interface StudentService {
 
   Single<StudentDto> insertOne(Student student);
 
+  Single<Student> updateOne(String id, Student student);
+
+  Maybe<Student> deleteOne(String id);
+
 }

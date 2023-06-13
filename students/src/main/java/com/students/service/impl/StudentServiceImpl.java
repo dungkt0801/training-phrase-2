@@ -8,6 +8,7 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import com.students.dto.StudentDto;
 import com.students.entity.Student;
@@ -38,18 +39,22 @@ public class StudentServiceImpl implements StudentService {
   @Override
   public Maybe<StudentDto> findById(String id) {
     return studentRepository.findById(id)
-      .flatMap(student -> eventBusSender.sendClassInfoRequest(student.getClassId())
-        .toMaybe()
-        .onErrorResumeNext(Maybe.just(new JsonObject()))
-        .map(clazz -> buildStudentResponseDto(student, clazz))
+      .flatMap(student ->
+        eventBusSender.sendClassInfoRequest(student.getClassId())
+          .toMaybe()
+          .onErrorResumeNext(Maybe.just(new JsonObject()))
+          .map(clazz -> buildStudentResponseDto(student, clazz))
       );
   }
 
   @Override
   public Single<StudentDto> insertOne(Student student) {
     return eventBusSender.sendClassInfoRequest(student.getClassId())
-      .flatMap(clazz -> checkClassAvailableAndInsertStudent(clazz, student)
-        .map(insertedStudent -> buildStudentResponseDto(student, clazz)))
+      .flatMap(clazz -> checkClassAvailableAndInsertStudent(clazz, student))
+      .flatMap(insertedStudent ->
+        eventBusSender.sendClassInfoRequest(insertedStudent.getClassId())
+          .map(clazzInfo -> buildStudentResponseDto(student, clazzInfo))
+      )
       .onErrorResumeNext(Single::error);
   }
 
@@ -70,6 +75,53 @@ public class StudentServiceImpl implements StudentService {
         return eventBusSender.sendUpdateClassRequest(clazz.getString("id"), clazz)
           .map(response -> insertedStudent);
       });
+  }
+
+  @Override
+  public Single<Student> updateOne(String id, Student student) {
+    return findById(id)
+      .switchIfEmpty(Maybe.error(new NoSuchElementException("No student was found with the id " + id)))
+      .flatMap(oldStudentDto -> {
+        student.setId(id);
+        String oldClassId = oldStudentDto.getClassInfo().getId();
+        return eventBusSender.sendClassInfoRequest(student.getClassId())
+          .flatMap(clazz -> checkClassAvailableAndUpdateStudent(clazz, student))
+          .flatMap(insertedStudent -> updateOldClass(oldClassId)
+            .map(response -> insertedStudent))
+          .toMaybe();
+      })
+      .toSingle()
+      .onErrorResumeNext(Single::error);
+  }
+
+  private Single<Student> checkClassAvailableAndUpdateStudent(JsonObject clazz, Student student) {
+    Long enrolledStudents = clazz.getLong("enrolledStudents");
+    Long totalStudents = clazz.getLong("totalStudents");
+    return (enrolledStudents < totalStudents)
+      ? updateStudentAndUpdateClass(clazz, student)
+      : Single.error(new IllegalArgumentException("The class is at maximum enrollment capacity"));
+  }
+
+  private Single<Student> updateStudentAndUpdateClass(JsonObject clazz, Student student) {
+    return studentRepository.updateOne(student.getId(), student)
+      .flatMap(insertedStudent -> {
+        clazz.put("enrolledStudents", clazz.getLong("enrolledStudents") + 1);
+        return eventBusSender.sendUpdateClassRequest(clazz.getString("id"), clazz)
+          .map(response -> insertedStudent);
+      });
+  }
+
+  private Single<JsonObject> updateOldClass(String oldClassId) {
+    return eventBusSender.sendClassInfoRequest(oldClassId)
+      .flatMap(oldClazz -> {
+        oldClazz.put("enrolledStudents", oldClazz.getLong("enrolledStudents") - 1);
+        return eventBusSender.sendUpdateClassRequest(oldClassId, oldClazz);
+      });
+  }
+
+  @Override
+  public Maybe<Student> deleteOne(String id) {
+    return studentRepository.deleteOne(id);
   }
 
   private StudentDto buildStudentResponseDto(Student student, JsonObject clazzJson) {

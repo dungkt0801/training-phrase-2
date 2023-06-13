@@ -10,4 +10,8 @@ public interface StudentHandler {
 
   void insertOne(RoutingContext rc);
 
+  void updateOne(RoutingContext rc);
+
+  void deleteOne(RoutingContext rc);
+
 }

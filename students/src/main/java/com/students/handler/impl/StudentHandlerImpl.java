@@ -49,9 +49,9 @@ public class StudentHandlerImpl implements StudentHandler {
 
     JsonObject body = rc.getBodyAsJson();
 
-    String validationError = validateStudentJsonObject(body);
-    if(!validationError.isEmpty()) {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validationError));
+    String validatedError = validateStudentJsonObject(body);
+    if(!validatedError.isEmpty()) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validatedError));
       return;
     }
 
@@ -61,6 +61,41 @@ public class StudentHandlerImpl implements StudentHandler {
         result -> Util.onSuccessResponse(rc, 200, result),
         error -> handleInsertErrorResponse(rc, error)
       );
+  }
+
+  @Override
+  public void updateOne(RoutingContext rc) {
+
+    final String id = rc.pathParam("id");
+    if(!Util.isValidObjectId(id)) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
+      return;
+    }
+
+    JsonObject body = rc.getBodyAsJson();
+    String validatedError = validateStudentJsonObject(body);
+    if(!validatedError.isEmpty()) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validatedError));
+      return;
+    }
+
+    final Student student = StudentUtil.studentFromJsonObject(body);
+    studentService.updateOne(id, student)
+      .subscribe(
+        result -> Util.onSuccessResponse(rc, 200, result),
+        error -> {
+          if(error instanceof NoSuchElementException) {
+            Util.onErrorResponse(rc, 404, error);
+          } else {
+            Util.onErrorResponse(rc, 500, error);
+          }
+        }
+      );
+  }
+
+  @Override
+  public void deleteOne(RoutingContext rc) {
+
   }
 
   private void handleInsertErrorResponse(RoutingContext rc, Throwable error) {

@@ -94,7 +94,8 @@ public class ClassRepositoryImpl implements ClassRepository {
       .put("$inc", new JsonObject().put("totalStudents", -1))
       .put("$inc", new JsonObject().put("version", 1));
 
-    return Maybe.create(emitter -> mongoClient.findOneAndUpdateWithOptions(COLLECTION_NAME,
+    return Maybe.create(emitter -> mongoClient.findOneAndUpdateWithOptions(
+      COLLECTION_NAME,
       query,
       update,
       new FindOptions(),
