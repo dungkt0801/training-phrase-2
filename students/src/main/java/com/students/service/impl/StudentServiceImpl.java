@@ -3,7 +3,6 @@ package com.students.service.impl;
 import com.students.dto.ClassDto;
 import com.students.eventbus.EventBusSender;
 import com.students.repository.StudentRepository;
-import com.students.util.StudentUtil;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
