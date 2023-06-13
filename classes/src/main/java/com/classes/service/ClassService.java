@@ -13,7 +13,7 @@ public interface ClassService {
 
   Maybe<ClassDto> findById(String id);
 
-  Single<Class> insertOne(Class clazz);
+  Single<ClassDto> insertOne(Class clazz);
 
   Maybe<ClassDto> updateOne(String id, Class clazz);
 

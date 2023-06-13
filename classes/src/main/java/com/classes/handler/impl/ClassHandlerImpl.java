@@ -42,7 +42,16 @@ public class ClassHandlerImpl implements ClassHandler {
 
   @Override
   public void insertOne(RoutingContext rc) {
-
+    if(rc.getBodyAsJson() != null) {
+      final Class clazz = ClassUtil.classFromJsonObject(rc.getBodyAsJson());
+      classService.insertOne(clazz)
+        .subscribe(
+          result -> Util.onSuccessResponse(rc, 200, result),
+          error -> Util.onErrorResponse(rc, 500, error)
+        );
+    } else {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Request body is empty"));
+    }
   }
 
   @Override

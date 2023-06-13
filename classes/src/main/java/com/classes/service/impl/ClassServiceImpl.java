@@ -42,8 +42,9 @@ public class ClassServiceImpl implements ClassService {
   }
 
   @Override
-  public Single<Class> insertOne(Class clazz) {
-    return null;
+  public Single<ClassDto> insertOne(Class clazz) {
+    return classRepository.insertOne(clazz)
+      .map(ClassUtil::classToClassDto);
   }
 
   @Override

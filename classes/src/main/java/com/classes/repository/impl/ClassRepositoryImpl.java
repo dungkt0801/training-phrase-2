@@ -6,10 +6,13 @@ import com.classes.util.ClassUtil;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.UpdateOptions;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
 
 @RequiredArgsConstructor
 public class ClassRepositoryImpl implements ClassRepository {
@@ -54,7 +57,18 @@ public class ClassRepositoryImpl implements ClassRepository {
 
   @Override
   public Single<Class> insertOne(Class clazz) {
-    return null;
+
+    JsonObject classJson = ClassUtil.jsonObjectFromClass(clazz)
+      .put("_id", new JsonObject().put("$oid", new ObjectId().toString()))
+      .put("version", 0);
+
+    return Single.create(emitter -> mongoClient.insert(COLLECTION_NAME, classJson, result -> {
+      if(result.succeeded()) {
+        emitter.onSuccess(new Class(classJson));
+      } else {
+        emitter.onError(result.cause());
+      }
+    }));
   }
 
   @Override
@@ -80,13 +94,15 @@ public class ClassRepositoryImpl implements ClassRepository {
       .put("$inc", new JsonObject().put("totalStudents", -1))
       .put("$inc", new JsonObject().put("version", 1));
 
-    return Maybe.create(emitter -> mongoClient.updateCollection(
-      COLLECTION_NAME,
-      query, update,
+    return Maybe.create(emitter -> mongoClient.findOneAndUpdateWithOptions(COLLECTION_NAME,
+      query,
+      update,
+      new FindOptions(),
+      new UpdateOptions().setReturningNewDocument(true),
       res -> {
         if (res.succeeded()) {
-          if (res.result().getDocMatched() > 0) {
-            emitter.onSuccess(new Class(res.result().toJson()));
+          if (res.result() != null) {
+            emitter.onSuccess(new Class(res.result()));
           } else {
             emitter.onComplete();
           }
