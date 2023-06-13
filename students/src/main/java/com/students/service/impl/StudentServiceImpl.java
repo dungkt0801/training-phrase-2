@@ -121,7 +121,12 @@ public class StudentServiceImpl implements StudentService {
 
   @Override
   public Maybe<Student> deleteOne(String id) {
-    return studentRepository.deleteOne(id);
+    return studentRepository.deleteOne(id)
+      .flatMap(deletedStudent ->
+        eventBusSender.sendClassInfoRequest(deletedStudent.getClassId()).toMaybe()
+          .flatMap(clazz -> updateOldClass(clazz.getString("id")).toMaybe())
+          .map(updatedClass -> deletedStudent)
+      );
   }
 
   private StudentDto buildStudentResponseDto(Student student, JsonObject clazzJson) {

@@ -96,6 +96,18 @@ public class StudentHandlerImpl implements StudentHandler {
   @Override
   public void deleteOne(RoutingContext rc) {
 
+    final String id = rc.pathParam("id");
+    if(!Util.isValidObjectId(id)) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
+      return;
+    }
+
+    studentService.deleteOne(id)
+      .subscribe(
+        result -> Util.onSuccessResponse(rc, 200, result),
+        error -> Util.onErrorResponse(rc, 500, error),
+        () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No student was found with the id " + id))
+      );
   }
 
   private void handleInsertErrorResponse(RoutingContext rc, Throwable error) {
