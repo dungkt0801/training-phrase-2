@@ -15,9 +15,9 @@ public class StudentUtil {
       student.setName(name);
     }
 
-    String birthDay= jsonObject.getString("birthDay");
-    if (birthDay != null && !birthDay.isEmpty()) {
-      student.setBirthday(birthDay);
+    String birthday= jsonObject.getString("birthday");
+    if (birthday != null && !birthday.isEmpty()) {
+      student.setBirthday(birthday);
     }
 
     student.setClassId(jsonObject.getString("classId"));
@@ -34,9 +34,9 @@ public class StudentUtil {
       jsonObject.put("name", name);
     }
 
-    String birthDay = student.getBirthday();
-    if(birthDay != null) {
-      jsonObject.put("birthDay", birthDay);
+    String birthday = student.getBirthday();
+    if(birthday != null) {
+      jsonObject.put("birthday", birthday);
     }
 
     String classId = student.getClassId();

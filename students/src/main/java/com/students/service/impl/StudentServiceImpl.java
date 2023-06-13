@@ -3,12 +3,14 @@ package com.students.service.impl;
 import com.students.dto.ClassDto;
 import com.students.eventbus.EventBusSender;
 import com.students.repository.StudentRepository;
+import com.students.util.StudentUtil;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import com.students.dto.StudentDto;
 import com.students.entity.Student;
@@ -23,6 +25,16 @@ public class StudentServiceImpl implements StudentService {
 
   @Override
   public Single<List<StudentDto>> findAll(JsonObject query) {
+
+    // check if query by className
+    if(query.containsKey("className")) {
+      return eventBusSender.sendGetClassIdsByName(query.remove("className").toString())
+        .map(classIds -> classIds.stream().map(classId -> new JsonObject().put("$oid", classId)).collect(
+          Collectors.toList()))
+        .map(classObjectIds -> query.put("classId", new JsonObject().put("$in", classObjectIds)))
+        .flatMap(this::getAllStudents);
+    }
+
     return getAllStudents(query);
   }
 

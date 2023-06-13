@@ -116,6 +116,25 @@ public class ClassRepositoryImpl implements ClassRepository {
 
   @Override
   public Single<List<String>> findClassIdsByName(String name) {
-    return null;
+    JsonObject query = new JsonObject().put("className", new JsonObject()
+      .put("$regex", name.trim())
+      .put("$options", "i")
+    );
+
+    return Single.create(emitter ->
+      mongoClient.find(COLLECTION_NAME, query, res -> {
+        if(res.succeeded()) {
+          emitter.onSuccess(
+            res.result().stream()
+              .map(Class::new)
+              .map(Class::getId)
+              .collect(Collectors.toList())
+          );
+        } else {
+          emitter.onError(res.cause());
+        }
+      })
+    );
   }
+
 }

@@ -3,7 +3,9 @@ package com.students.eventbus.impl;
 import com.students.eventbus.EventBusSender;
 import io.reactivex.Single;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 
@@ -44,6 +46,22 @@ public class EventBusSenderImpl implements EventBusSender {
           } else {
             emitter.onError(new NoSuchElementException("No class was found with the id " + id));
           }
+        } else {
+          emitter.onError(reply.cause());
+        }
+      });
+    });
+  }
+
+  @Override
+  public Single<List<String>> sendGetClassIdsByName(String name) {
+    return Single.create(emitter -> {
+      JsonObject request = new JsonObject()
+        .put("className", name);
+
+      eventBus.<JsonArray>send("request.getClassIdsByName", request, reply -> {
+        if(reply.succeeded()) {
+          emitter.onSuccess(reply.result().body().getList());
         } else {
           emitter.onError(reply.cause());
         }

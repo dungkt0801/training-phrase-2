@@ -169,11 +169,11 @@ public class StudentHandlerImpl implements StudentHandler {
     }
 
     // Check if "birthDay" field exists and follows the format "yyyy-MM-dd"
-    if (jsonObject.containsKey("birthDay") && !jsonObject.getString("birthDay").isEmpty()) {
+    if (jsonObject.containsKey("birthday") && !jsonObject.getString("birthday").isEmpty()) {
       String invalidBirthFormat = "Birthday must be in the 'yyyy-MM-dd' format";
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
       try {
-        LocalDate.parse(jsonObject.getString("birthDay"), formatter);
+        LocalDate.parse(jsonObject.getString("birthday"), formatter);
       } catch (DateTimeParseException e) {
         return invalidBirthFormat;
       }
