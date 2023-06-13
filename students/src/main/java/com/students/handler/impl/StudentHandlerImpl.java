@@ -1,10 +1,16 @@
 package com.students.handler.impl;
 
+import com.students.entity.Student;
 import com.students.service.StudentService;
+import com.students.util.StudentUtil;
 import com.students.util.Util;
+import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.MultiMap;
-import io.vertx.reactivex.ext.web.RoutingContext;
+import io.vertx.ext.web.RoutingContext;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import com.students.handler.StudentHandler;
@@ -21,6 +27,53 @@ public class StudentHandlerImpl implements StudentHandler {
         result -> Util.onSuccessResponse(rc, 200, result),
         error -> Util.onErrorResponse(rc, 500, error)
       );
+  }
+
+  @Override
+  public void findById(RoutingContext rc) {
+    final String id = rc.pathParam("id");
+    if(Util.isValidObjectId(id)) {
+      studentService.findById(id)
+        .subscribe(
+          result -> Util.onSuccessResponse(rc, 200, result),
+          error -> Util.onErrorResponse(rc, 500, error),
+          () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No student was found with the id " + id))
+        );
+    } else {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
+    }
+  }
+
+  @Override
+  public void insertOne(RoutingContext rc) {
+
+    JsonObject body = rc.getBodyAsJson();
+
+    String validationError = validateStudentJsonObject(body);
+    if(!validationError.isEmpty()) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validationError));
+      return;
+    }
+
+    final Student student = StudentUtil.studentFromJsonObject(body);
+    studentService.insertOne(student)
+      .subscribe(
+        result -> Util.onSuccessResponse(rc, 200, result),
+        error -> handleInsertErrorResponse(rc, error)
+      );
+  }
+
+  private void handleInsertErrorResponse(RoutingContext rc, Throwable error) {
+    {
+      if(error instanceof IllegalArgumentException) {
+        Util.onErrorResponse(rc, 400, error);
+      }
+      else if (error instanceof NoSuchElementException) {
+        Util.onErrorResponse(rc, 404, error);
+      } else {
+        Util.onErrorResponse(rc, 500, error);
+      }
+    }
   }
 
   private JsonObject getQueryParams(RoutingContext rc) {
@@ -48,13 +101,46 @@ public class StudentHandlerImpl implements StudentHandler {
       query.put("className", className.trim());
     }
 
-    // birthDay
-    String birthDay = queryParams.get("birthDay");
-    if(birthDay != null && !birthDay.isEmpty()) {
-      query.put("birthDay", birthDay.trim());
+    // birthday
+    String birthday = queryParams.get("birthday");
+    if(birthday != null && !birthday.isEmpty()) {
+      query.put("birthday", birthday.trim());
     }
 
     return query;
+  }
+
+  private String validateStudentJsonObject(JsonObject jsonObject) {
+
+    if (jsonObject.isEmpty()) {
+      return "Body is empty";
+    }
+
+    // Check if "name" field exists and is not empty
+    if (!jsonObject.containsKey("name") || jsonObject.getString("name").isEmpty()) {
+      return "Student name is required";
+    }
+
+    // Check if "birthDay" field exists and follows the format "yyyy-MM-dd"
+    if (jsonObject.containsKey("birthDay") && !jsonObject.getString("birthDay").isEmpty()) {
+      String invalidBirthFormat = "Birthday must be in the 'yyyy-MM-dd' format";
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+      try {
+        LocalDate.parse(jsonObject.getString("birthDay"), formatter);
+      } catch (DateTimeParseException e) {
+        return invalidBirthFormat;
+      }
+    }
+
+    if (!jsonObject.containsKey("classId") || jsonObject.getString("classId").isEmpty()) {
+      return "Class is required";
+    }
+
+    if(!Util.isValidObjectId(jsonObject.getString("classId"))) {
+      return "Invalid class id";
+    }
+
+    return "";
   }
 
 }

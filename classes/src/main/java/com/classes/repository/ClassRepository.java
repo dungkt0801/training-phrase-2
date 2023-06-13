@@ -14,7 +14,7 @@ public interface ClassRepository {
 
   Single<Class> insertOne(Class clazz);
 
-  Single<String> updateOne(String id, Class clazz);
+  Maybe<Class> updateOne(String id, Class clazz);
 
   Single<List<String>> findClassIdsByName(String name);
 

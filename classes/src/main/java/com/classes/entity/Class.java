@@ -1,5 +1,6 @@
 package com.classes.entity;
 
+import com.classes.util.Util;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import io.vertx.core.json.JsonObject;
@@ -25,10 +26,18 @@ public class Class {
 
   private Long enrolledStudents;
 
+  private Long version;
+
   public Class(JsonObject jsonObject) {
+
     // id
-    JsonObject idObject = jsonObject.getJsonObject("_id");
-    this.id = idObject.getString("$oid");
+    if (
+      jsonObject.containsKey("_id") &&
+        jsonObject.getValue("_id") instanceof JsonObject &&
+        Util.isValidObjectId(jsonObject.getJsonObject("_id").getString("$oid"))
+    ) {
+      this.id = jsonObject.getJsonObject("_id").getString("$oid");
+    }
 
     // className
     String className = jsonObject.getString("className");
@@ -50,6 +59,14 @@ public class Class {
       this.enrolledStudents = enrolledStudents;
     } else {
       this.enrolledStudents = 0L;
+    }
+
+    // version
+    Long version = jsonObject.getLong("version");
+    if(version != null && version >=0) {
+      this.version = version;
+    } else {
+      this.version = 0L;
     }
 
   }

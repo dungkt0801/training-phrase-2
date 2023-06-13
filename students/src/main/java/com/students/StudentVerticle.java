@@ -1,6 +1,7 @@
 package com.students;
 
 import com.students.eventbus.EventBusSender;
+import com.students.eventbus.impl.EventBusSenderImpl;
 import com.students.handler.StudentHandler;
 import com.students.handler.impl.StudentHandlerImpl;
 import com.students.repository.StudentRepository;
@@ -8,19 +9,17 @@ import com.students.repository.impl.StudentRepositoryImpl;
 import com.students.router.StudentRouter;
 import com.students.service.StudentService;
 import com.students.service.impl.StudentServiceImpl;
-import io.reactivex.Single;
+import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.reactivex.core.AbstractVerticle;
-import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.http.HttpServer;
-import io.vertx.reactivex.ext.mongo.MongoClient;
+import io.vertx.core.Vertx;
+import io.vertx.ext.mongo.MongoClient;
 import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
-import io.vertx.reactivex.config.ConfigRetriever;
 
 public class StudentVerticle extends AbstractVerticle {
 
@@ -29,37 +28,45 @@ public class StudentVerticle extends AbstractVerticle {
     ClusterManager mgr = new HazelcastClusterManager();
     VertxOptions clusterOptions = new VertxOptions().setClusterManager(mgr);
 
-    Single<Vertx> vertxSingle = Vertx.rxClusteredVertx(clusterOptions);
-
-    vertxSingle
-      .flatMap(vertx -> {
-        this.vertx = vertx;
+    Vertx.clusteredVertx(clusterOptions, res -> {
+      if (res.succeeded()) {
+        this.vertx = res.result();
         ConfigStoreOptions store = new ConfigStoreOptions().setType("env");
         ConfigRetrieverOptions options = new ConfigRetrieverOptions().addStore(store);
         ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
-        return retriever.rxGetConfig();
-      })
-      .flatMap(this::createServicesAndStartServer)
-      .subscribe(
-        result -> startFuture.complete(),
-        error -> startFuture.fail(error)
-      );
+        retriever.getConfig(ar -> {
+          if (ar.succeeded()) {
+            JsonObject configurations = ar.result();
+            createServicesAndStartServer(configurations);
+            startFuture.complete();
+          } else {
+            startFuture.fail(ar.cause());
+          }
+        });
+      } else {
+        startFuture.fail(res.cause());
+      }
+    });
   }
 
-  private Single<HttpServer> createServicesAndStartServer(JsonObject configurations) {
+  private void createServicesAndStartServer(JsonObject configurations) {
     MongoClient mongoClient = createMongoClient(vertx, configurations);
 
     StudentRepository studentRepository = new StudentRepositoryImpl(mongoClient);
-    EventBusSender eventBusSender = new EventBusSender(vertx.eventBus());
+    EventBusSender eventBusSender = new EventBusSenderImpl(vertx.eventBus());
     StudentService studentService = new StudentServiceImpl(eventBusSender, studentRepository);
     StudentHandler studentHandler = new StudentHandlerImpl(studentService);
     StudentRouter studentRouter = new StudentRouter(vertx, studentHandler);
 
-    return vertx
-      .createHttpServer()
+    vertx.createHttpServer()
       .requestHandler(studentRouter.getRouter())
-      .rxListen(configurations.getInteger("HTTP_PORT", 8080))
-      .doOnSuccess(server -> System.out.println("HTTP Server listening on port " + server.actualPort()));
+      .listen(configurations.getInteger("HTTP_PORT", 8080), result -> {
+        if (result.succeeded()) {
+          System.out.println("HTTP Server listening on port " + result.result().actualPort());
+        } else {
+          System.err.println("Could not start HTTP server: " + result.cause());
+        }
+      });
   }
 
   private MongoClient createMongoClient(Vertx vertx, JsonObject configurations) {

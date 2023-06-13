@@ -1,10 +1,12 @@
 package com.classes.eventbus;
 
+import com.classes.entity.Class;
 import com.classes.service.ClassService;
+import com.classes.util.ClassUtil;
 import io.reactivex.Completable;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.eventbus.EventBus;
-import io.vertx.reactivex.core.eventbus.Message;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -17,8 +19,8 @@ public class EventBusConsumer {
   public Completable registerConsumers() {
     return Completable.create(emitter -> {
       try {
-        eventBus.consumer("request.classinfo", this::handleClassInfoRequest);
-//        eventBus.consumer("request.studentinfo", this::handleStudentInfoRequest);
+        eventBus.consumer("request.classInfo", this::handleClassInfoRequest);
+        eventBus.consumer("request.updateClass", this::handleUpdateClassRequest);
         emitter.onComplete();
       } catch (Exception e) {
         emitter.onError(e);
@@ -26,17 +28,13 @@ public class EventBusConsumer {
     });
   }
 
-  private void handleClassInfoRequest(Message<Object> message) {
-    JsonObject request = (JsonObject) message.body();
-    String classId = request.getString("classId");
-
-    System.out.println("handleClassInfoRequest: " + classId);
+  private void handleClassInfoRequest(Message<JsonObject> message) {
+    String classId = message.body().getString("classId");
     classService.findById(classId)
       .subscribe(
         classInfo -> {
-          System.out.println("handleClassInfoRequest classInfo: " + classInfo);
           JsonObject response = new JsonObject()
-            .put("classId", classInfo.getId())
+            .put("id", classInfo.getId())
             .put("className", classInfo.getClassName())
             .put("totalStudents", classInfo.getTotalStudents())
             .put("enrolledStudents", classInfo.getEnrolledStudents());
@@ -51,8 +49,23 @@ public class EventBusConsumer {
       );
   }
 
-  private void handleStudentInfoRequest(Message<Object> message) {
-    // Similar to handleClassInfoRequest, but fetch student info instead
+  private void handleUpdateClassRequest(Message<JsonObject> message) {
+    JsonObject request = message.body();
+    final String id = request.getString("classId");
+    final Class clazz = ClassUtil.classFromJsonObject(request.getJsonObject("classRequest"));
+    classService.updateOne(id, clazz)
+      .subscribe(
+        classInfo -> {
+          JsonObject response = new JsonObject()
+            .put("id", classInfo.getId())
+            .put("className", classInfo.getClassName())
+            .put("totalStudents", classInfo.getTotalStudents())
+            .put("enrolledStudents", classInfo.getEnrolledStudents());
+          message.reply(response);
+        },
+        error -> message.reply(new JsonObject().put("error", error.getMessage())),
+        () -> message.reply(new JsonObject().put("error", "No class found with the id " + id))
+      );
   }
 
 }
