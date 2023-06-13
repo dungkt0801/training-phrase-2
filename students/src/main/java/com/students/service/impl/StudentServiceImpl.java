@@ -1,8 +1,10 @@
 package com.students.service.impl;
 
-import com.students.dto.ClassDto;
+import com.common.dto.ClassDto;
+import com.common.dto.StudentDto;
 import com.students.eventbus.EventBusSender;
 import com.students.repository.StudentRepository;
+import com.students.util.StudentUtil;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -11,7 +13,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import com.students.dto.StudentDto;
 import com.students.entity.Student;
 import com.students.service.StudentService;
 
@@ -89,7 +90,7 @@ public class StudentServiceImpl implements StudentService {
   }
 
   @Override
-  public Single<Student> updateOne(String id, Student student) {
+  public Single<StudentDto> updateOne(String id, Student student) {
     return findById(id)
       .switchIfEmpty(Maybe.error(new NoSuchElementException("No student was found with the id " + id)))
       .flatMap(oldStudentDto -> {
@@ -98,7 +99,10 @@ public class StudentServiceImpl implements StudentService {
         return eventBusSender.sendClassInfoRequest(student.getClassId())
           .flatMap(clazz -> checkClassAvailableAndUpdateStudent(clazz, student))
           .flatMap(insertedStudent -> updateOldClass(oldClassId)
-            .map(response -> insertedStudent))
+            .flatMap(response -> eventBusSender.sendClassInfoRequest(insertedStudent.getClassId())
+              .map(classInfo -> buildStudentResponseDto(student, classInfo))
+            )
+          )
           .toMaybe();
       })
       .toSingle()

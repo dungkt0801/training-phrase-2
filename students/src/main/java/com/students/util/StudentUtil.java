@@ -14,7 +14,7 @@ public class StudentUtil {
       student.setName(name);
     }
 
-    String birthday= jsonObject.getString("birthday");
+    String birthday = jsonObject.getString("birthday");
     if (birthday != null && !birthday.isEmpty()) {
       student.setBirthday(birthday);
     }

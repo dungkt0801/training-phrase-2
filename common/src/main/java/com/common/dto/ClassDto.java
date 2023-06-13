@@ -1,4 +1,4 @@
-package com.students.dto;
+package com.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -14,14 +14,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @JsonInclude(Include.NON_NULL)
-public class StudentDto {
+public class ClassDto {
 
   private String id;
 
-  private String name;
+  private String className;
 
-  private String birthday;
+  private Long totalStudents;
 
-  private ClassDto classInfo;
+  private Long enrolledStudents;
 
 }

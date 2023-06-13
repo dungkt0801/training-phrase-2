@@ -1,6 +1,6 @@
 package com.classes.entity;
 
-import com.classes.util.Util;
+import com.common.util.Util;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import io.vertx.core.json.JsonObject;

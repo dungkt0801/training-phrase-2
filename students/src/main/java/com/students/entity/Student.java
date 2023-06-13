@@ -1,7 +1,7 @@
 package com.students.entity;
 
+import com.common.util.Util;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.students.util.Util;
 import io.vertx.core.json.JsonObject;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

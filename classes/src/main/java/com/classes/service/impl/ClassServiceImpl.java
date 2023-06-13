@@ -1,10 +1,10 @@
 package com.classes.service.impl;
 
-import com.classes.dto.ClassDto;
 import com.classes.entity.Class;
 import com.classes.repository.ClassRepository;
 import com.classes.service.ClassService;
 import com.classes.util.ClassUtil;
+import com.common.dto.ClassDto;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;

@@ -1,4 +1,4 @@
-package com.students.util;
+package com.common.util;
 
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;

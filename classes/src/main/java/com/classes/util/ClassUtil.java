@@ -1,7 +1,7 @@
 package com.classes.util;
 
-import com.classes.dto.ClassDto;
 import com.classes.entity.Class;
+import com.common.dto.ClassDto;
 import io.vertx.core.json.JsonObject;
 
 public class ClassUtil {
