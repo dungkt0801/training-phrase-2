@@ -6,7 +6,7 @@ public class ApiGatewayUtil {
 
   public static void onClientSuccessResponse(RoutingContext rc, int status, String result) {
     rc.response()
-      .setStatusCode(200)
+      .setStatusCode(status)
       .putHeader("Content-Type", "application/json")
       .end(result);
   }

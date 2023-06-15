@@ -28,7 +28,7 @@ public class StudentGatewayHandlerImpl implements StudentGatewayHandler {
       .getAbs(url)
       .send(result -> {
         if(result.succeeded()) {
-          ApiGatewayUtil.onClientSuccessResponse(routingContext, 200, result.result().bodyAsString());
+          ApiGatewayUtil.onClientSuccessResponse(routingContext, result.result().statusCode(), result.result().bodyAsString());
         } else {
           Util.onErrorResponse(routingContext, 500, result.cause());
         }
@@ -40,7 +40,7 @@ public class StudentGatewayHandlerImpl implements StudentGatewayHandler {
       .postAbs(STUDENTS_SERVICE_ROOT + STUDENTS_BASE_PATH + routingContext.normalisedPath())
       .sendJsonObject(routingContext.getBodyAsJson(), result -> {
         if(result.succeeded()) {
-          ApiGatewayUtil.onClientSuccessResponse(routingContext, 200, result.result().bodyAsString());
+          ApiGatewayUtil.onClientSuccessResponse(routingContext, result.result().statusCode(), result.result().bodyAsString());
         } else {
           Util.onErrorResponse(routingContext, 500, result.cause());
         }
@@ -52,7 +52,7 @@ public class StudentGatewayHandlerImpl implements StudentGatewayHandler {
       .putAbs(STUDENTS_SERVICE_ROOT + STUDENTS_BASE_PATH + routingContext.normalisedPath())
       .sendJsonObject(routingContext.getBodyAsJson(), result -> {
         if(result.succeeded()) {
-          ApiGatewayUtil.onClientSuccessResponse(routingContext, 200, result.result().bodyAsString());
+          ApiGatewayUtil.onClientSuccessResponse(routingContext, result.result().statusCode(), result.result().bodyAsString());
         } else {
           Util.onErrorResponse(routingContext, 500, result.cause());
         }
@@ -64,7 +64,7 @@ public class StudentGatewayHandlerImpl implements StudentGatewayHandler {
       .deleteAbs(STUDENTS_SERVICE_ROOT + STUDENTS_BASE_PATH + routingContext.normalisedPath())
       .send(result -> {
         if(result.succeeded()) {
-          ApiGatewayUtil.onClientSuccessResponse(routingContext, 200, result.result().bodyAsString());
+          ApiGatewayUtil.onClientSuccessResponse(routingContext, result.result().statusCode(), result.result().bodyAsString());
         } else {
           Util.onErrorResponse(routingContext, 500, result.cause());
         }
