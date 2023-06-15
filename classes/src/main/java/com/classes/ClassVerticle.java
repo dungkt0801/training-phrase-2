@@ -33,6 +33,10 @@ public class ClassVerticle extends AbstractVerticle {
         ConfigStoreOptions store = new ConfigStoreOptions().setType("env");
         ConfigRetrieverOptions options = new ConfigRetrieverOptions().addStore(store);
         io.vertx.config.ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
+
+        int numberMembersInCluster = mgr.getNodes().size();
+        System.out.println("NUMBER OF MEMBERS IN CLUSTER: " + numberMembersInCluster);
+
         retriever.getConfig(ar -> {
           if (ar.succeeded()) {
             JsonObject configurations = ar.result();
@@ -59,7 +63,7 @@ public class ClassVerticle extends AbstractVerticle {
 
     vertx.createHttpServer()
       .requestHandler(classRouter.getRouter())
-      .listen(configurations.getInteger("HTTP_PORT", 8081), server -> {
+      .listen(configurations.getInteger("HTTP_PORT", 8084), server -> {
         System.out.println("HTTP Server listening on port " + server.result().actualPort());
         consumerRegistrar.registerConsumers()
           .subscribe(

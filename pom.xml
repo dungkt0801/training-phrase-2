@@ -100,6 +100,12 @@
       <artifactId>rxjava</artifactId>
       <version>${rxjava2-version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-service-discovery</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
