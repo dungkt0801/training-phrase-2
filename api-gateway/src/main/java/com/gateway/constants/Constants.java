@@ -4,7 +4,7 @@ public class Constants {
 
   // students service
 
-  public static final String STUDENTS_SERVICE_URL = "http://localhost:8080";
+  public static final String STUDENTS_SERVICE_ROOT = "http://localhost:8080";
 
   public static final String STUDENTS_SERVICE_ROUTE_PATTERN = "/students/*";
 
@@ -13,7 +13,7 @@ public class Constants {
 
   // classes service
 
-  public static final String CLASSES_SERVICE_URL = "http://localhost:8081";
+  public static final String CLASSES_SERVICE_ROOT = "http://localhost:8081";
 
   public static final String CLASSES_SERVICE_ROUTE_PATTERN = "/classes/*";
 

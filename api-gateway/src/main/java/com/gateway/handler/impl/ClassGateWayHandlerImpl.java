@@ -1,14 +1,14 @@
 package com.gateway.handler.impl;
 
 import com.gateway.handler.ClassGatewayHandler;
-import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.WebClient;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class ClassGateWayHandlerImpl implements ClassGatewayHandler {
 
-  private final Vertx vertx;
+  private final WebClient webClient;
 
   public void handleClasses(RoutingContext routingContext) {
     // Code to handle GET request for classes

@@ -7,14 +7,16 @@ import com.gateway.handler.impl.StudentGatewayHandlerImpl;
 import com.gateway.router.ApiGatewayRouter;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.ext.web.client.WebClient;
 
 public class ApiGatewayVerticle extends AbstractVerticle {
 
   @Override
   public void start(Future<Void> startFuture) throws Exception {
 
-    StudentGatewayHandler studentGatewayHandler = new StudentGatewayHandlerImpl(vertx);
-    ClassGatewayHandler classGatewayHandler = new ClassGateWayHandlerImpl(vertx);
+    WebClient webClient = WebClient.create(vertx);
+    StudentGatewayHandler studentGatewayHandler = new StudentGatewayHandlerImpl(webClient);
+    ClassGatewayHandler classGatewayHandler = new ClassGateWayHandlerImpl(webClient);
     ApiGatewayRouter apiGatewayRouter = new ApiGatewayRouter(vertx, studentGatewayHandler, classGatewayHandler);
 
     vertx.createHttpServer()

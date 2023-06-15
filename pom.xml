@@ -11,6 +11,7 @@
     <module>classes</module>
     <module>students</module>
     <module>common</module>
+    <module>api-gateway</module>
   </modules>
 
   <properties>
