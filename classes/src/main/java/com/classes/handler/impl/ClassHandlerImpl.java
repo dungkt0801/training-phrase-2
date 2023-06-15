@@ -4,7 +4,7 @@ import com.classes.entity.Class;
 import com.classes.handler.ClassHandler;
 import com.classes.service.ClassService;
 import com.classes.util.ClassUtil;
-import com.classes.util.Util;
+import com.common.util.Util;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;

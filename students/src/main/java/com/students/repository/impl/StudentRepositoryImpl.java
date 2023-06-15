@@ -6,8 +6,11 @@ import com.students.util.StudentUtil;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.UpdateOptions;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -66,6 +69,52 @@ public class StudentRepositoryImpl implements StudentRepository {
         emitter.onError(res.cause());
       }
     }));
+  }
+
+  @Override
+  public Single<Student> updateOne(String id, Student student) {
+
+    final JsonObject query = new JsonObject()
+      .put("_id", new JsonObject().put("$oid", id));
+
+    JsonObject update = new JsonObject()
+      .put("$set", StudentUtil.jsonObjectFromStudent(student));
+
+    return Single.create(emitter -> mongoClient.findOneAndUpdateWithOptions(
+      COLLECTION_NAME,
+      query,
+      update,
+      new FindOptions(),
+      new UpdateOptions().setReturningNewDocument(true),
+      res -> {
+        if (res.succeeded() && res.result() != null) {
+          emitter.onSuccess(new Student(res.result()));
+        } else {
+          emitter.onError(new NoSuchElementException("No student was found with the id " + id));
+        }
+      }
+    ));
+  }
+
+  @Override
+  public Maybe<Student> deleteOne(String id) {
+
+    final JsonObject query = new JsonObject().put("_id", new JsonObject().put("$oid", id));
+
+    return Maybe.create(emitter ->
+      mongoClient.findOneAndDelete(COLLECTION_NAME, query, res -> {
+        if(res.succeeded()) {
+          JsonObject removedStudent = res.result();
+          if(res.result() != null) {
+            emitter.onSuccess(new Student(removedStudent));
+          } else {
+            emitter.onComplete();
+          }
+        } else {
+          emitter.onError(res.cause());
+        }
+      })
+    );
   }
 
 }

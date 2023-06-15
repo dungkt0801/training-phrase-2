@@ -13,4 +13,8 @@ public interface StudentRepository {
 
   Single<Student> insertOne(Student student);
 
+  Single<Student> updateOne(String id, Student student);
+
+  Maybe<Student> deleteOne(String id);
+
 }

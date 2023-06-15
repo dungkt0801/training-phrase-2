@@ -1,6 +1,5 @@
-package com.students.util;
+package com.common.util;
 
-import com.students.dto.ClassDto;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;

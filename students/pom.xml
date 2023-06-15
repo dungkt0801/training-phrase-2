@@ -11,10 +11,19 @@
   </parent>
 
   <artifactId>students</artifactId>
+  <version>1.0-SNAPSHOT</version>
 
   <properties>
     <main.verticle>com.students.StudentVerticle</main.verticle>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.example</groupId>
+      <artifactId>common</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>

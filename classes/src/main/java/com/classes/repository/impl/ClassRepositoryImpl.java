@@ -94,7 +94,8 @@ public class ClassRepositoryImpl implements ClassRepository {
       .put("$inc", new JsonObject().put("totalStudents", -1))
       .put("$inc", new JsonObject().put("version", 1));
 
-    return Maybe.create(emitter -> mongoClient.findOneAndUpdateWithOptions(COLLECTION_NAME,
+    return Maybe.create(emitter -> mongoClient.findOneAndUpdateWithOptions(
+      COLLECTION_NAME,
       query,
       update,
       new FindOptions(),
@@ -115,6 +116,25 @@ public class ClassRepositoryImpl implements ClassRepository {
 
   @Override
   public Single<List<String>> findClassIdsByName(String name) {
-    return null;
+    JsonObject query = new JsonObject().put("className", new JsonObject()
+      .put("$regex", name.trim())
+      .put("$options", "i")
+    );
+
+    return Single.create(emitter ->
+      mongoClient.find(COLLECTION_NAME, query, res -> {
+        if(res.succeeded()) {
+          emitter.onSuccess(
+            res.result().stream()
+              .map(Class::new)
+              .map(Class::getId)
+              .collect(Collectors.toList())
+          );
+        } else {
+          emitter.onError(res.cause());
+        }
+      })
+    );
   }
+
 }

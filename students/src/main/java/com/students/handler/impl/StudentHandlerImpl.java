@@ -1,9 +1,9 @@
 package com.students.handler.impl;
 
+import com.common.util.Util;
 import com.students.entity.Student;
 import com.students.service.StudentService;
 import com.students.util.StudentUtil;
-import com.students.util.Util;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -49,9 +49,9 @@ public class StudentHandlerImpl implements StudentHandler {
 
     JsonObject body = rc.getBodyAsJson();
 
-    String validationError = validateStudentJsonObject(body);
-    if(!validationError.isEmpty()) {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validationError));
+    String validatedError = validateStudentJsonObject(body);
+    if(!validatedError.isEmpty()) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validatedError));
       return;
     }
 
@@ -60,6 +60,53 @@ public class StudentHandlerImpl implements StudentHandler {
       .subscribe(
         result -> Util.onSuccessResponse(rc, 200, result),
         error -> handleInsertErrorResponse(rc, error)
+      );
+  }
+
+  @Override
+  public void updateOne(RoutingContext rc) {
+
+    final String id = rc.pathParam("id");
+    if(!Util.isValidObjectId(id)) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
+      return;
+    }
+
+    JsonObject body = rc.getBodyAsJson();
+    String validatedError = validateStudentJsonObject(body);
+    if(!validatedError.isEmpty()) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validatedError));
+      return;
+    }
+
+    final Student student = StudentUtil.studentFromJsonObject(body);
+    studentService.updateOne(id, student)
+      .subscribe(
+        result -> Util.onSuccessResponse(rc, 200, result),
+        error -> {
+          if(error instanceof NoSuchElementException) {
+            Util.onErrorResponse(rc, 404, error);
+          } else {
+            Util.onErrorResponse(rc, 500, error);
+          }
+        }
+      );
+  }
+
+  @Override
+  public void deleteOne(RoutingContext rc) {
+
+    final String id = rc.pathParam("id");
+    if(!Util.isValidObjectId(id)) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
+      return;
+    }
+
+    studentService.deleteOne(id)
+      .subscribe(
+        result -> Util.onSuccessResponse(rc, 200, result),
+        error -> Util.onErrorResponse(rc, 500, error),
+        () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No student was found with the id " + id))
       );
   }
 
@@ -122,11 +169,11 @@ public class StudentHandlerImpl implements StudentHandler {
     }
 
     // Check if "birthDay" field exists and follows the format "yyyy-MM-dd"
-    if (jsonObject.containsKey("birthDay") && !jsonObject.getString("birthDay").isEmpty()) {
+    if (jsonObject.containsKey("birthday") && !jsonObject.getString("birthday").isEmpty()) {
       String invalidBirthFormat = "Birthday must be in the 'yyyy-MM-dd' format";
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
       try {
-        LocalDate.parse(jsonObject.getString("birthDay"), formatter);
+        LocalDate.parse(jsonObject.getString("birthday"), formatter);
       } catch (DateTimeParseException e) {
         return invalidBirthFormat;
       }

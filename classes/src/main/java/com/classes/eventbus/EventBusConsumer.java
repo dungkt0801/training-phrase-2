@@ -6,6 +6,7 @@ import com.classes.util.ClassUtil;
 import io.reactivex.Completable;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +22,7 @@ public class EventBusConsumer {
       try {
         eventBus.consumer("request.classInfo", this::handleClassInfoRequest);
         eventBus.consumer("request.updateClass", this::handleUpdateClassRequest);
+        eventBus.consumer("request.getClassIdsByName", this::handleGetClassIdsByName);
         emitter.onComplete();
       } catch (Exception e) {
         emitter.onError(e);
@@ -65,6 +67,15 @@ public class EventBusConsumer {
         },
         error -> message.reply(new JsonObject().put("error", error.getMessage())),
         () -> message.reply(new JsonObject().put("error", "No class found with the id " + id))
+      );
+  }
+
+  private void handleGetClassIdsByName(Message<JsonObject> message) {
+    final String classNameRequest = message.body().getString("className");
+    classService.findClassIdsByName(classNameRequest)
+      .subscribe(
+        result -> message.reply(new JsonArray(result)),
+        error -> message.reply(new JsonObject().put("error", error.getMessage()))
       );
   }
 

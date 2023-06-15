@@ -1,7 +1,7 @@
 package com.classes.service;
 
-import com.classes.dto.ClassDto;
 import com.classes.entity.Class;
+import com.common.dto.ClassDto;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
