@@ -21,6 +21,7 @@ public class Util {
     rc.response()
       .setStatusCode(status)
       .putHeader("Content-Type", "application/json")
+        .putHeader("Service-Port", String.valueOf(rc.request().localAddress().port()))
       .end(Json.encodePrettily(error));
   }
 

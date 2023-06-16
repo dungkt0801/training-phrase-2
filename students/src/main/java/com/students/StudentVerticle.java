@@ -63,12 +63,12 @@ public class StudentVerticle extends AbstractVerticle {
 
     vertx.createHttpServer()
       .requestHandler(studentRouter.getRouter())
-      .listen(configurations.getInteger("HTTP_PORT", 8081), result -> {
+      .listen(configurations.getInteger("HTTP_PORT", 8083), result -> {
         if (result.succeeded()) {
 
 
           // Create a record for this service
-          Record record = HttpEndpoint.createRecord("student-service", "localhost", 8081, "/");
+          Record record = HttpEndpoint.createRecord("students-service", "localhost", 8083, "/");
 
           // Use the Service Discovery to publish the record
           ServiceDiscovery discovery = ServiceDiscovery.create(vertx);

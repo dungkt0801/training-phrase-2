@@ -1,8 +1,5 @@
 package com.gateway.router;
 
-import static com.gateway.constants.Constants.CLASSES_SERVICE_ROUTE_PATTERN;
-import static com.gateway.constants.Constants.STUDENTS_SERVICE_ROUTE_PATTERN;
-
 import com.gateway.handler.GatewayHandler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
@@ -18,10 +15,7 @@ public class ApiGatewayRouter {
 
   public Router getRouter() {
     Router router = Router.router(vertx);
-
-    registerHandler(router, gatewayHandler, STUDENTS_SERVICE_ROUTE_PATTERN);
-    registerHandler(router, gatewayHandler, CLASSES_SERVICE_ROUTE_PATTERN);
-
+    registerHandler(router, gatewayHandler, "/*");
     return router;
   }
 
