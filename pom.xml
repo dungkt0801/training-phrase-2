@@ -11,6 +11,7 @@
     <module>classes</module>
     <module>students</module>
     <module>common</module>
+    <module>api-gateway</module>
   </modules>
 
   <properties>
@@ -98,6 +99,12 @@
       <groupId>io.reactivex.rxjava2</groupId>
       <artifactId>rxjava</artifactId>
       <version>${rxjava2-version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-service-discovery</artifactId>
+      <version>${vertx.version}</version>
     </dependency>
   </dependencies>
 
