@@ -11,8 +11,6 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ApiGatewayVerticle extends AbstractVerticle {
 
@@ -25,15 +23,9 @@ public class ApiGatewayVerticle extends AbstractVerticle {
     Vertx.clusteredVertx(options, vertxAsyncResult -> {
       if (vertxAsyncResult.succeeded()) {
         Vertx vertx = vertxAsyncResult.result();
-
         ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
-
-        // create load balancer for each service
-        Map<String, LoadBalancer> loadBalancers = new HashMap<>();
-        loadBalancers.put("students-service", new LoadBalancer(discovery, vertx, "students-service"));
-        loadBalancers.put("classes-service", new LoadBalancer(discovery, vertx, "classes-service"));
-
-        GatewayHandler gatewayHandler = new GatewayHandlerImpl(loadBalancers);
+        LoadBalancer loadBalancer = new LoadBalancer(vertx, discovery);
+        GatewayHandler gatewayHandler = new GatewayHandlerImpl(loadBalancer);
         ApiGatewayRouter apiGatewayRouter = new ApiGatewayRouter(vertx, gatewayHandler);
 
         vertx.createHttpServer()
