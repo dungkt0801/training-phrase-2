@@ -4,9 +4,6 @@ import static com.gateway.constants.Constants.API_VERSION;
 
 import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -42,31 +39,36 @@ public class LoadBalancer {
   }
 
   private void tryNext(String serviceName, List<WebClient> clients, AtomicInteger serviceIndex, SingleEmitter<WebClient> emitter) {
-    WebClient selectedClient = clients.get(serviceIndex.getAndUpdate(i -> (i + 1) % clients.size()));
-    healthCheck(selectedClient, serviceName, clients, ar -> {
-      if (ar.succeeded()) {
-        System.out.println("success");
-        emitter.onSuccess(selectedClient);
-      } else {
-        System.out.println("fail");
-        AtomicInteger currentServiceIndex = serviceIndices.get(serviceName);
-        if (currentServiceIndex == null || serviceIndices.isEmpty()) {
-          emitter.onError(new RuntimeException("No available services"));
-        } else {
-          System.out.println("currentServiceIndex: " + currentServiceIndex);
-          tryNext(serviceName, clients, currentServiceIndex, emitter);
+    WebClient selectedClient = clients.get(
+      serviceIndex.getAndUpdate(i -> (i + 1) % clients.size()));
+    healthCheck(selectedClient, serviceName)
+      .subscribe(
+        result -> {
+          System.out.println("success");
+          emitter.onSuccess(selectedClient);
+        },
+        error -> {
+          System.out.println("fail");
+          AtomicInteger currentServiceIndex = serviceIndices.get(serviceName);
+          if (currentServiceIndex == null || serviceIndices.isEmpty()) {
+            emitter.onError(new RuntimeException("No available services"));
+          } else {
+            System.out.println("currentServiceIndex: " + currentServiceIndex);
+            tryNext(serviceName, clients, currentServiceIndex, emitter);
+          }
         }
-      }
-    });
+      );
   }
-  public void healthCheck(WebClient client, String serviceName, List<WebClient> clients, Handler<AsyncResult<Void>> resultHandler) {
-    client.get(API_VERSION + "/" + serviceName.split("-")[0]).send(ar -> {
-      if (ar.succeeded() && ar.result().statusCode() == 200) {
-        resultHandler.handle(Future.succeededFuture());
-      } else {
-        //serviceIndices.remove(serviceName);  // remove unhealthy service
-        resultHandler.handle(Future.failedFuture("Unhealthy service"));
-      }
+
+  public Single<WebClient> healthCheck(WebClient client, String serviceName) {
+    return Single.create(emitter -> {
+      client.get(API_VERSION + "/" + serviceName.split("-")[0]).send(ar -> {
+        if (ar.succeeded() && ar.result().statusCode() == 200) {
+          emitter.onSuccess(client);
+        } else {
+          emitter.onError(new Exception("Unhealthy service"));
+        }
+      });
     });
   }
 
