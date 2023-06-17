@@ -1,6 +1,12 @@
 package com.gateway.loadbalancer;
 
+import static com.gateway.constants.Constants.API_VERSION;
+
 import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -20,11 +26,50 @@ public class LoadBalancer {
   private ConcurrentHashMap<String, AtomicInteger> serviceIndices = new ConcurrentHashMap<>();
 
   public Single<WebClient> next(String serviceName) {
-    return getClients(serviceName).flatMap(clients -> {
-      AtomicInteger serviceIndex = serviceIndices.computeIfAbsent(serviceName, k -> new AtomicInteger(0));
-      int currentIndex = serviceIndex.getAndUpdate(i -> (i + 1) % clients.size());
-      System.out.println(serviceName + ": " + clients.size());
-      return Single.just(clients.get(currentIndex));
+    return getClients(serviceName)
+      .flatMap(clients -> {
+        if (clients.isEmpty()) {
+          return Single.error(new RuntimeException("No available services"));
+        }
+
+        AtomicInteger serviceIndex = serviceIndices.computeIfAbsent(serviceName, k -> new AtomicInteger(0));
+        System.out.println("Service index: " + serviceIndex.get());
+        System.out.println(serviceIndices.size());
+
+        return Single.create(emitter -> tryNext(serviceName, clients, serviceIndex, emitter));
+      });
+  }
+
+  private void tryNext(String serviceName, List<WebClient> clients, AtomicInteger serviceIndex, SingleEmitter<WebClient> emitter) {
+    WebClient selectedClient = clients.get(serviceIndex.updateAndGet(i -> (i + 1) % clients.size()));
+    healthCheck(selectedClient, serviceName, clients, ar -> {
+      if (ar.succeeded()) {
+        emitter.onSuccess(selectedClient);
+      } else {
+        int nextIndex = serviceIndex.updateAndGet(i -> (i + 1) % clients.size());
+        System.out.println("Next index: " + nextIndex);
+        System.out.println("serviceIndices size: " + serviceIndices.size());
+        AtomicInteger currentServiceIndex = serviceIndices.get(serviceName);
+        System.out.println("serviceIndices: " + serviceIndex);
+        System.out.println(currentServiceIndex.get());
+        if (currentServiceIndex == null || serviceIndices.isEmpty()) {
+          emitter.onError(new RuntimeException("No available services"));
+        } else {
+          currentServiceIndex.updateAndGet(i -> (i + 1) % clients.size());
+          tryNext(serviceName, clients, currentServiceIndex, emitter);
+        }
+      }
+    });
+  }
+  public void healthCheck(WebClient client, String serviceName, List<WebClient> clients, Handler<AsyncResult<Void>> resultHandler) {
+    client.get(API_VERSION + "/" + serviceName.split("-")[0]).send(ar -> {
+      if (ar.succeeded() && ar.result().statusCode() == 200) {
+        resultHandler.handle(Future.succeededFuture());
+      } else {
+        //serviceIndices.remove(serviceName);  // remove unhealthy service
+        clients.remove(client);
+        resultHandler.handle(Future.failedFuture("Unhealthy service"));
+      }
     });
   }
 
@@ -39,15 +84,6 @@ public class LoadBalancer {
               .setDefaultHost(record.getLocation().getString("host"))
               .setDefaultPort(record.getLocation().getInteger("port"));
             WebClient client = WebClient.create(vertx, options);
-
-            // check if service is still working
-//            client.get(API_VERSION + "/" + serviceName.split("-")[0]).send(result -> {
-//              if (result.succeeded() && result.result().statusCode() == 200) {
-//                System.out.print("add ne");
-//                newClients.add(client);
-//              }
-//            });
-            
             newClients.add(client);
           }
 
