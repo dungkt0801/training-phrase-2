@@ -22,8 +22,10 @@ import lombok.RequiredArgsConstructor;
 public class LoadBalancer {
 
   private final Vertx vertx;
+
   private final ServiceDiscovery serviceDiscovery;
-  private ConcurrentHashMap<String, AtomicInteger> serviceIndices = new ConcurrentHashMap<>();
+
+  private final ConcurrentHashMap<String, AtomicInteger> serviceIndices;
 
   public Single<WebClient> next(String serviceName) {
     return getClients(serviceName)
@@ -34,28 +36,24 @@ public class LoadBalancer {
 
         AtomicInteger serviceIndex = serviceIndices.computeIfAbsent(serviceName, k -> new AtomicInteger(0));
         System.out.println("Service index: " + serviceIndex.get());
-        System.out.println(serviceIndices.size());
 
         return Single.create(emitter -> tryNext(serviceName, clients, serviceIndex, emitter));
       });
   }
 
   private void tryNext(String serviceName, List<WebClient> clients, AtomicInteger serviceIndex, SingleEmitter<WebClient> emitter) {
-    WebClient selectedClient = clients.get(serviceIndex.updateAndGet(i -> (i + 1) % clients.size()));
+    WebClient selectedClient = clients.get(serviceIndex.getAndUpdate(i -> (i + 1) % clients.size()));
     healthCheck(selectedClient, serviceName, clients, ar -> {
       if (ar.succeeded()) {
+        System.out.println("success");
         emitter.onSuccess(selectedClient);
       } else {
-        int nextIndex = serviceIndex.updateAndGet(i -> (i + 1) % clients.size());
-        System.out.println("Next index: " + nextIndex);
-        System.out.println("serviceIndices size: " + serviceIndices.size());
+        System.out.println("fail");
         AtomicInteger currentServiceIndex = serviceIndices.get(serviceName);
-        System.out.println("serviceIndices: " + serviceIndex);
-        System.out.println(currentServiceIndex.get());
         if (currentServiceIndex == null || serviceIndices.isEmpty()) {
           emitter.onError(new RuntimeException("No available services"));
         } else {
-          currentServiceIndex.updateAndGet(i -> (i + 1) % clients.size());
+          System.out.println("currentServiceIndex: " + currentServiceIndex);
           tryNext(serviceName, clients, currentServiceIndex, emitter);
         }
       }
@@ -67,7 +65,6 @@ public class LoadBalancer {
         resultHandler.handle(Future.succeededFuture());
       } else {
         //serviceIndices.remove(serviceName);  // remove unhealthy service
-        clients.remove(client);
         resultHandler.handle(Future.failedFuture("Unhealthy service"));
       }
     });
