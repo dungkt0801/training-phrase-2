@@ -27,21 +27,22 @@ public class LoadBalancer {
   public Single<WebClient> next(String serviceName) {
     return getClients(serviceName)
       .flatMap(clients -> {
-        if (clients.isEmpty()) {
-          return Single.error(new RuntimeException("No available services"));
-        }
-
         AtomicInteger serviceIndex = serviceIndices.computeIfAbsent(serviceName, k -> new AtomicInteger(0));
         if(serviceIndex.get() >= clients.size()) {
           serviceIndex.set(0);
         }
         System.out.println("Service index: " + serviceIndex.get());
-
-        return Single.create(emitter -> tryNext(serviceName, clients, serviceIndex, emitter));
+        return Single.create(emitter -> tryNext(serviceName, clients, serviceIndex, emitter, 0));
       });
   }
 
-  private void tryNext(String serviceName, List<WebClient> clients, AtomicInteger serviceIndex, SingleEmitter<WebClient> emitter) {
+  private void tryNext(String serviceName, List<WebClient> clients, AtomicInteger serviceIndex, SingleEmitter<WebClient> emitter, int retries) {
+
+    if (retries >= clients.size()) {
+      emitter.onError(new RuntimeException("No available services"));
+      return;
+    }
+
     WebClient selectedClient = clients.get(
       serviceIndex.getAndUpdate(i -> (i + 1) % clients.size()));
     healthCheck(selectedClient, serviceName)
@@ -53,19 +54,15 @@ public class LoadBalancer {
         error -> {
           System.out.println("fail");
           AtomicInteger currentServiceIndex = serviceIndices.get(serviceName);
-          if (currentServiceIndex == null || serviceIndices.isEmpty()) {
-            emitter.onError(new RuntimeException("No available services"));
-          } else {
-            System.out.println("currentServiceIndex: " + currentServiceIndex);
-            tryNext(serviceName, clients, currentServiceIndex, emitter);
-          }
+          System.out.println("currentServiceIndex: " + currentServiceIndex);
+          tryNext(serviceName, clients, currentServiceIndex, emitter, retries + 1);
         }
       );
   }
 
   public Single<WebClient> healthCheck(WebClient client, String serviceName) {
     return Single.create(emitter -> {
-      client.get(API_VERSION + "/" + serviceName.split("-")[0]).send(ar -> {
+      client.get(API_VERSION + "/" + serviceName).send(ar -> {
         if (ar.succeeded() && ar.result().statusCode() == 200) {
           emitter.onSuccess(client);
         } else {
