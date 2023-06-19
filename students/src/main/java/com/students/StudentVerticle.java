@@ -71,7 +71,7 @@ public class StudentVerticle extends AbstractVerticle {
         if (result.succeeded()) {
 
           // Create a record for this service
-          this.record = HttpEndpoint.createRecord("students-service", "localhost", 8080, "/");
+          this.record = HttpEndpoint.createRecord("students", "localhost", 8080, "/");
 
           // Use the Service Discovery to publish the record
           this.discovery = ServiceDiscovery.create(vertx);

@@ -79,7 +79,7 @@ public class ClassVerticle extends AbstractVerticle {
                 System.out.println("Successfully registered consumers");
 
                 // Create a record for this service
-                this.record = HttpEndpoint.createRecord("classes-service", "localhost", 8180, "/");
+                this.record = HttpEndpoint.createRecord("classes", "localhost", 8180, "/");
 
                 // Use the Service Discovery to publish the record
                 this.discovery = ServiceDiscovery.create(vertx);
@@ -90,9 +90,6 @@ public class ClassVerticle extends AbstractVerticle {
                     System.err.println("Service could not be published");
                   }
                 });
-
-
-
               },
               error -> System.out.println("Failed to register consumers: " + error.getMessage())
             );

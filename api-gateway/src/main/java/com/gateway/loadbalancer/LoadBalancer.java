@@ -32,6 +32,9 @@ public class LoadBalancer {
         }
 
         AtomicInteger serviceIndex = serviceIndices.computeIfAbsent(serviceName, k -> new AtomicInteger(0));
+        if(serviceIndex.get() >= clients.size()) {
+          serviceIndex.set(0);
+        }
         System.out.println("Service index: " + serviceIndex.get());
 
         return Single.create(emitter -> tryNext(serviceName, clients, serviceIndex, emitter));
@@ -86,7 +89,7 @@ public class LoadBalancer {
             newClients.add(client);
           }
 
-          System.out.println(newClients.size());
+          System.out.println("Found clients with name '" + serviceName + "': " + newClients.size());
           emitter.onSuccess(newClients);
         } else {
           emitter.onError(ar.cause());
