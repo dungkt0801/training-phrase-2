@@ -75,6 +75,41 @@ public class ClassHandlerImpl implements ClassHandler {
 
   }
 
+  @Override
+  public void checkId(RoutingContext rc) {
+    final String id = rc.pathParam("id");
+    if(!Util.isValidObjectId(id)) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
+    } else {
+      rc.next();
+    }
+  }
+
+  @Override
+  public void checkBody(RoutingContext rc) {
+    JsonObject body = rc.getBodyAsJson();
+    String validatedError = validateClassJsonObject(body);
+    if(!validatedError.isEmpty()) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validatedError));
+    } else {
+      rc.next();
+    }
+  }
+
+  private String validateClassJsonObject(JsonObject jsonObject) {
+
+    if (jsonObject.isEmpty()) {
+      return "Body is empty";
+    }
+
+    // Check if "name" field exists and is not empty
+    if (!jsonObject.containsKey("className") || jsonObject.getString("className").isEmpty()) {
+      return "Class name is required";
+    }
+
+    return "";
+  }
+
   private JsonObject getQueryParams(RoutingContext rc) {
     MultiMap queryParams = rc.request().params();
     JsonObject query = new JsonObject();
