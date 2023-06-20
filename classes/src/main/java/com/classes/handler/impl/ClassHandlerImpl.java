@@ -67,7 +67,7 @@ public class ClassHandlerImpl implements ClassHandler {
   public void checkId(RoutingContext rc) {
     final String id = rc.pathParam("id");
     if(!Util.isValidObjectId(id)) {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid class id"));
     } else {
       rc.next();
     }
