@@ -25,6 +25,10 @@ import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
 
 public class ClassVerticle extends AbstractVerticle {
 
+  private ServiceDiscovery discovery;
+
+  private Record record;
+
   @Override
   public void start(Future<Void> startFuture) throws Exception {
     ClusterManager mgr = new HazelcastClusterManager();
@@ -66,7 +70,7 @@ public class ClassVerticle extends AbstractVerticle {
 
     vertx.createHttpServer()
       .requestHandler(classRouter.getRouter())
-      .listen(configurations.getInteger("HTTP_PORT", 8181), server -> {
+      .listen(configurations.getInteger("HTTP_PORT", 8180), server -> {
         if(server.succeeded()) {
           System.out.println("HTTP Server listening on port " + server.result().actualPort());
           consumerRegistrar.registerConsumers()
@@ -74,12 +78,11 @@ public class ClassVerticle extends AbstractVerticle {
               () -> {
                 System.out.println("Successfully registered consumers");
 
-
                 // Create a record for this service
-                Record record = HttpEndpoint.createRecord("classes-service", "localhost", 8181, "/");
+                this.record = HttpEndpoint.createRecord("classes", "localhost", 8180, "/");
 
                 // Use the Service Discovery to publish the record
-                ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
+                this.discovery = ServiceDiscovery.create(vertx);
                 discovery.publish(record, ar -> {
                   if (ar.succeeded()) {
                     System.out.println("Service published");
@@ -87,9 +90,6 @@ public class ClassVerticle extends AbstractVerticle {
                     System.err.println("Service could not be published");
                   }
                 });
-
-
-
               },
               error -> System.out.println("Failed to register consumers: " + error.getMessage())
             );
@@ -97,6 +97,18 @@ public class ClassVerticle extends AbstractVerticle {
           System.out.println("Could not start HTTP server: " + server.cause());
         }
       });
+  }
+
+  @Override
+  public void stop() throws Exception {
+    discovery.unpublish(record.getRegistration(), ar -> {
+      if (ar.succeeded()) {
+        System.out.println("Service unpublished");
+        discovery.close();
+      } else {
+        System.err.println("Service could not be unpublished");
+      }
+    });
   }
 
   private MongoClient createMongoClient(Vertx vertx, JsonObject configurations) {

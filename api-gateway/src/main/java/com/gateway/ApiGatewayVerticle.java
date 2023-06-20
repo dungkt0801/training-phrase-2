@@ -11,6 +11,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.servicediscovery.ServiceDiscovery;
 import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ApiGatewayVerticle extends AbstractVerticle {
 
@@ -24,7 +25,7 @@ public class ApiGatewayVerticle extends AbstractVerticle {
       if (vertxAsyncResult.succeeded()) {
         Vertx vertx = vertxAsyncResult.result();
         ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
-        LoadBalancer loadBalancer = new LoadBalancer(vertx, discovery);
+        LoadBalancer loadBalancer = new LoadBalancer(vertx, discovery, new ConcurrentHashMap<>());
         GatewayHandler gatewayHandler = new GatewayHandlerImpl(loadBalancer);
         ApiGatewayRouter apiGatewayRouter = new ApiGatewayRouter(vertx, gatewayHandler);
 

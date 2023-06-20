@@ -26,6 +26,10 @@ import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
 
 public class StudentVerticle extends AbstractVerticle {
 
+  private ServiceDiscovery discovery;
+
+  private Record record;
+
   @Override
   public void start(Future<Void> startFuture) throws Exception {
     ClusterManager mgr = new HazelcastClusterManager();
@@ -63,15 +67,14 @@ public class StudentVerticle extends AbstractVerticle {
 
     vertx.createHttpServer()
       .requestHandler(studentRouter.getRouter())
-      .listen(configurations.getInteger("HTTP_PORT", 8083), result -> {
+      .listen(configurations.getInteger("HTTP_PORT", 8080), result -> {
         if (result.succeeded()) {
 
-
           // Create a record for this service
-          Record record = HttpEndpoint.createRecord("students-service", "localhost", 8083, "/");
+          this.record = HttpEndpoint.createRecord("students", "localhost", 8080, "/");
 
           // Use the Service Discovery to publish the record
-          ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
+          this.discovery = ServiceDiscovery.create(vertx);
           discovery.publish(record, ar -> {
             if (ar.succeeded()) {
               System.out.println("Service published");
@@ -86,6 +89,18 @@ public class StudentVerticle extends AbstractVerticle {
           System.err.println("Could not start HTTP server: " + result.cause());
         }
       });
+  }
+
+  @Override
+  public void stop() throws Exception {
+    discovery.unpublish(record.getRegistration(), ar -> {
+      if (ar.succeeded()) {
+        System.out.println("Service unpublished");
+        discovery.close();
+      } else {
+        System.err.println("Service could not be unpublished");
+      }
+    });
   }
 
   private MongoClient createMongoClient(Vertx vertx, JsonObject configurations) {
