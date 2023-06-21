@@ -17,11 +17,11 @@ public class ClassRouter {
     final Router classRouter = Router.router(vertx);
 
     classRouter.route("/api/v1/classes*").handler(BodyHandler.create());
+    classRouter.route("/api/v1/classes/:id").handler(classHandler::checkId);
 
     classRouter.get("/api/v1/classes").handler(classHandler::findAll);
 
     classRouter.get("/api/v1/classes/:id")
-      .handler(classHandler::checkId)
       .handler(classHandler::findById);
 
     classRouter.post("/api/v1/classes")
@@ -29,7 +29,6 @@ public class ClassRouter {
       .handler(classHandler::insertOne);
 
     classRouter.put("/api/v1/classes/:id")
-      .handler(classHandler::checkId)
       .handler(classHandler::checkBody)
       .handler(classHandler::updateOne);
 
