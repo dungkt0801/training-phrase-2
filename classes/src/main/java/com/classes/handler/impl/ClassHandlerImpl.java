@@ -28,51 +28,74 @@ public class ClassHandlerImpl implements ClassHandler {
   @Override
   public void findById(RoutingContext rc) {
     final String id = rc.pathParam("id");
-    if(Util.isValidObjectId(id)) {
-      classService.findById(id)
-        .subscribe(
-          result -> Util.onSuccessResponse(rc, 200, result),
-          error -> Util.onErrorResponse(rc, 500, error),
-          () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No class found with the id " + id))
-        );
-    } else {
-      Util.onErrorResponse(rc, 400, new NoSuchElementException("Invalid class id"));
-    }
+    classService.findById(id)
+      .subscribe(
+        result -> Util.onSuccessResponse(rc, 200, result),
+        error -> Util.onErrorResponse(rc, 500, error),
+        () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No class found with the id " + id))
+      );
   }
 
   @Override
   public void insertOne(RoutingContext rc) {
-    if(rc.getBodyAsJson() != null) {
-      final Class clazz = ClassUtil.classFromJsonObject(rc.getBodyAsJson());
-      classService.insertOne(clazz)
-        .subscribe(
-          result -> Util.onSuccessResponse(rc, 200, result),
-          error -> Util.onErrorResponse(rc, 500, error)
-        );
-    } else {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Request body is empty"));
-    }
+    final Class clazz = ClassUtil.classFromJsonObject(rc.getBodyAsJson());
+    classService.insertOne(clazz)
+      .subscribe(
+        result -> Util.onSuccessResponse(rc, 200, result),
+        error -> Util.onErrorResponse(rc, 500, error)
+      );
   }
 
   @Override
   public void updateOne(RoutingContext rc) {
-    if(rc.getBodyAsJson() != null) {
-      final String id = rc.pathParam("id");
-      final Class clazz = ClassUtil.classFromJsonObject(rc.getBodyAsJson());
-      classService.updateOne(id, clazz)
-        .subscribe(
-          result -> Util.onSuccessResponse(rc, 200, result),
-          error -> Util.onErrorResponse(rc, 500, error),
-          () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No class found with the id " + id))
-        );
-    } else {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Request body is empty"));
-    }
+    final String id = rc.pathParam("id");
+    final Class clazz = ClassUtil.classFromJsonObject(rc.getBodyAsJson());
+    classService.updateOne(id, clazz)
+      .subscribe(
+        result -> Util.onSuccessResponse(rc, 200, result),
+        error -> Util.onErrorResponse(rc, 500, error),
+        () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No class found with the id " + id))
+      );
   }
 
   @Override
   public void deleteOne(RoutingContext rc) {
 
+  }
+
+  @Override
+  public void checkId(RoutingContext rc) {
+    final String id = rc.pathParam("id");
+    if(!Util.isValidObjectId(id)) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid class id"));
+    } else {
+      rc.next();
+    }
+  }
+
+  @Override
+  public void checkBody(RoutingContext rc) {
+    JsonObject body = rc.getBodyAsJson();
+    String validatedError = validateClassJsonObject(body);
+    if(!validatedError.isEmpty()) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validatedError));
+    } else {
+      rc.next();
+    }
+  }
+
+  private String validateClassJsonObject(JsonObject jsonObject) {
+
+    if (jsonObject.isEmpty()) {
+      return "Body is empty";
+    }
+
+    // Check if "name" field exists and is not empty
+    if (!jsonObject.containsKey("className") || jsonObject.getString("className").isEmpty()) {
+      return "Class name is required";
+    }
+
+    return "";
   }
 
   private JsonObject getQueryParams(RoutingContext rc) {

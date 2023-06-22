@@ -32,29 +32,17 @@ public class StudentHandlerImpl implements StudentHandler {
   @Override
   public void findById(RoutingContext rc) {
     final String id = rc.pathParam("id");
-    if(Util.isValidObjectId(id)) {
-      studentService.findById(id)
-        .subscribe(
-          result -> Util.onSuccessResponse(rc, 200, result),
-          error -> Util.onErrorResponse(rc, 500, error),
-          () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No student was found with the id " + id))
-        );
-    } else {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
-    }
+    studentService.findById(id)
+      .subscribe(
+        result -> Util.onSuccessResponse(rc, 200, result),
+        error -> Util.onErrorResponse(rc, 500, error),
+        () -> Util.onErrorResponse(rc, 404, new NoSuchElementException("No student was found with the id " + id))
+      );
   }
 
   @Override
   public void insertOne(RoutingContext rc) {
-
     JsonObject body = rc.getBodyAsJson();
-
-    String validatedError = validateStudentJsonObject(body);
-    if(!validatedError.isEmpty()) {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validatedError));
-      return;
-    }
-
     final Student student = StudentUtil.studentFromJsonObject(body);
     studentService.insertOne(student)
       .subscribe(
@@ -65,19 +53,8 @@ public class StudentHandlerImpl implements StudentHandler {
 
   @Override
   public void updateOne(RoutingContext rc) {
-
     final String id = rc.pathParam("id");
-    if(!Util.isValidObjectId(id)) {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
-      return;
-    }
-
     JsonObject body = rc.getBodyAsJson();
-    String validatedError = validateStudentJsonObject(body);
-    if(!validatedError.isEmpty()) {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validatedError));
-      return;
-    }
 
     final Student student = StudentUtil.studentFromJsonObject(body);
     studentService.updateOne(id, student)
@@ -95,12 +72,7 @@ public class StudentHandlerImpl implements StudentHandler {
 
   @Override
   public void deleteOne(RoutingContext rc) {
-
     final String id = rc.pathParam("id");
-    if(!Util.isValidObjectId(id)) {
-      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
-      return;
-    }
 
     studentService.deleteOne(id)
       .subscribe(
@@ -155,6 +127,27 @@ public class StudentHandlerImpl implements StudentHandler {
     }
 
     return query;
+  }
+
+  @Override
+  public void checkId(RoutingContext rc) {
+    final String id = rc.pathParam("id");
+    if(!Util.isValidObjectId(id)) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException("Invalid student id"));
+    } else {
+      rc.next();
+    }
+  }
+
+  @Override
+  public void checkBody(RoutingContext rc) {
+    JsonObject body = rc.getBodyAsJson();
+    String validatedError = validateStudentJsonObject(body);
+    if(!validatedError.isEmpty()) {
+      Util.onErrorResponse(rc, 400, new IllegalArgumentException(validatedError));
+    } else {
+      rc.next();
+    }
   }
 
   private String validateStudentJsonObject(JsonObject jsonObject) {

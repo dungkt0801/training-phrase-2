@@ -14,4 +14,8 @@ public interface ClassHandler {
 
   void deleteOne(RoutingContext rc);
 
+  void checkId(RoutingContext id);
+
+  void checkBody(RoutingContext rc);
+
 }
